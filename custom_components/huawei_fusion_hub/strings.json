@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select source integrations",
+        "description": "Choose which installed integrations the hub should aggregate. Detected integrations are pre-selected.",
+        "data": {
+          "sources": "Source integrations"
+        }
+      },
+      "priority": {
+        "title": "Set source priority",
+        "description": "Order the sources from highest to lowest priority. The hub always uses the highest-priority source that is currently available.",
+        "data": {
+          "priority_0": "Priority 1 (highest)",
+          "priority_1": "Priority 2",
+          "priority_2": "Priority 3"
+        }
+      }
+    },
+    "error": {
+      "no_sources": "Select at least one source integration.",
+      "duplicate_priority": "Each source can appear only once in the priority list."
+    },
+    "abort": {
+      "already_configured": "Huawei Fusion Hub is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Huawei Fusion Hub options",
+        "description": "Change source priority and alert behavior.",
+        "data": {
+          "priority_0": "Priority 1 (highest)",
+          "priority_1": "Priority 2",
+          "priority_2": "Priority 3",
+          "notify_on_disconnect": "Notify when a source goes offline"
+        }
+      }
+    },
+    "error": {
+      "duplicate_priority": "Each source can appear only once in the priority list."
+    }
+  }
+}

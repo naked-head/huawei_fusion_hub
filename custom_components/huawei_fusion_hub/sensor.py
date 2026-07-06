@@ -1,0 +1,72 @@
+"""Aggregated sensors exposed by the hub."""
+from __future__ import annotations
+
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import (
+    ATTR_CANDIDATES,
+    ATTR_SOURCE,
+    ATTR_SOURCE_ENTITY,
+    DOMAIN,
+    ENTITY_PREFIX,
+)
+from .coordinator import HubCoordinator
+from .mapping import SENSOR_DEFS_BY_KEY, HubSensorDef
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    coordinator: HubCoordinator = hass.data[DOMAIN][entry.entry_id]
+    entities = [
+        HubSensor(coordinator, SENSOR_DEFS_BY_KEY[key])
+        for key in coordinator.candidates
+    ]
+    async_add_entities(entities)
+
+
+class HubSensor(CoordinatorEntity[HubCoordinator], SensorEntity):
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: HubCoordinator, sensor_def: HubSensorDef) -> None:
+        super().__init__(coordinator)
+        self._def = sensor_def
+        self._attr_unique_id = f"{ENTITY_PREFIX}_{sensor_def.key}"
+        self._attr_suggested_object_id = f"{ENTITY_PREFIX}_{sensor_def.key}"
+        self._attr_name = sensor_def.name
+        self._attr_device_class = sensor_def.device_class
+        self._attr_state_class = sensor_def.state_class
+        self._attr_native_unit_of_measurement = sensor_def.unit
+        self._attr_icon = sensor_def.icon
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, "hub")},
+            name="Huawei Fusion Hub",
+            manufacturer="naked-head",
+            entry_type=DeviceEntryType.SERVICE,
+        )
+
+    @property
+    def native_value(self):
+        resolved = self.coordinator.data.get(self._def.key)
+        return resolved.value if resolved else None
+
+    @property
+    def available(self) -> bool:
+        resolved = self.coordinator.data.get(self._def.key)
+        return bool(resolved and resolved.value is not None)
+
+    @property
+    def extra_state_attributes(self):
+        resolved = self.coordinator.data.get(self._def.key)
+        return {
+            ATTR_SOURCE: resolved.source if resolved else None,
+            ATTR_SOURCE_ENTITY: resolved.source_entity if resolved else None,
+            ATTR_CANDIDATES: self.coordinator.candidates.get(self._def.key, {}),
+        }

@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Seleziona le integrazioni sorgente",
+        "description": "Scegli quali integrazioni installate deve aggregare l'hub. Le integrazioni rilevate sono preselezionate.",
+        "data": {
+          "sources": "Integrazioni sorgente"
+        }
+      },
+      "priority": {
+        "title": "Imposta la priorità delle sorgenti",
+        "description": "Ordina le sorgenti dalla priorità più alta alla più bassa. L'hub usa sempre la sorgente disponibile con priorità più alta.",
+        "data": {
+          "priority_0": "Priorità 1 (massima)",
+          "priority_1": "Priorità 2",
+          "priority_2": "Priorità 3"
+        }
+      }
+    },
+    "error": {
+      "no_sources": "Seleziona almeno un'integrazione sorgente.",
+      "duplicate_priority": "Ogni sorgente può comparire una sola volta nella lista delle priorità."
+    },
+    "abort": {
+      "already_configured": "Huawei Fusion Hub è già configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni Huawei Fusion Hub",
+        "description": "Modifica la priorità delle sorgenti e il comportamento degli avvisi.",
+        "data": {
+          "priority_0": "Priorità 1 (massima)",
+          "priority_1": "Priorità 2",
+          "priority_2": "Priorità 3",
+          "notify_on_disconnect": "Notifica quando una sorgente va offline"
+        }
+      }
+    },
+    "error": {
+      "duplicate_priority": "Ogni sorgente può comparire una sola volta nella lista delle priorità."
+    }
+  }
+}

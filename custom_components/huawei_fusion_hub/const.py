@@ -1,0 +1,39 @@
+"""Constants for Huawei Fusion Hub."""
+
+DOMAIN = "huawei_fusion_hub"
+ENTITY_PREFIX = "hf_hub"
+
+# --- Source integrations ---
+SOURCE_HUAWEI_SOLAR = "huawei_solar"
+SOURCE_FUSION_SOLAR = "fusion_solar"
+SOURCE_FUSION_SOLAR_PLUS = "fusionsolarplus"
+
+ALL_SOURCES = [
+    SOURCE_HUAWEI_SOLAR,
+    SOURCE_FUSION_SOLAR,
+    SOURCE_FUSION_SOLAR_PLUS,
+]
+
+SOURCE_NAMES = {
+    SOURCE_HUAWEI_SOLAR: "Huawei Solar (Modbus)",
+    SOURCE_FUSION_SOLAR: "FusionSolar (Kiosk/OpenAPI)",
+    SOURCE_FUSION_SOLAR_PLUS: "FusionSolarPlus",
+}
+
+# --- Config keys ---
+CONF_SOURCES = "sources"
+CONF_PRIORITY = "priority"
+CONF_NOTIFY_ON_DISCONNECT = "notify_on_disconnect"
+CONF_STALE_TIMEOUT = "stale_timeout"
+CONF_OVERRIDES = "overrides"
+
+DEFAULT_NOTIFY_ON_DISCONNECT = True
+DEFAULT_STALE_TIMEOUT = 0  # 0 = disabled
+
+# A source is considered offline when the fraction of its mapped
+# entities in unavailable/unknown exceeds this threshold.
+SOURCE_OFFLINE_THRESHOLD = 0.8
+
+ATTR_SOURCE = "source"
+ATTR_SOURCE_ENTITY = "source_entity"
+ATTR_CANDIDATES = "candidates"
