@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -16,6 +17,7 @@ from .const import (
     DEVICE_NAMES,
     DOMAIN,
     ENTITY_PREFIX,
+    SIGNAL_NEW_KEYS,
 )
 from .coordinator import HubCoordinator
 from .mapping import SENSOR_DEFS_BY_KEY, HubSensorDef
@@ -27,11 +29,22 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: HubCoordinator = hass.data[DOMAIN][entry.entry_id]
-    entities = [
+    async_add_entities(
         HubSensor(coordinator, SENSOR_DEFS_BY_KEY[key])
         for key in coordinator.candidates
-    ]
-    async_add_entities(entities)
+    )
+
+    @callback
+    def _add_new_keys(new_keys: list[str]) -> None:
+        async_add_entities(
+            HubSensor(coordinator, SENSOR_DEFS_BY_KEY[key]) for key in new_keys
+        )
+
+    entry.async_on_unload(
+        async_dispatcher_connect(
+            hass, f"{SIGNAL_NEW_KEYS}_{entry.entry_id}", _add_new_keys
+        )
+    )
 
 
 class HubSensor(CoordinatorEntity[HubCoordinator], SensorEntity):

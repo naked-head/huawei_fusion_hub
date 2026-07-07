@@ -7,7 +7,12 @@ from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import (
+    async_call_later,
+    async_track_state_change_event,
+)
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.unit_conversion import (
     EnergyConverter,
@@ -19,9 +24,13 @@ from .const import (
     CONF_NOTIFY_ON_DISCONNECT,
     CONF_OVERRIDES,
     CONF_PRIORITY,
+    DEVICE_NAMES,
     DOMAIN,
+    SIGNAL_NEW_KEYS,
     SOURCE_NAMES,
     SOURCE_OFFLINE_THRESHOLD,
+    STORAGE_KEY,
+    STORAGE_VERSION,
 )
 from .mapping import SENSOR_DEFS, SENSOR_DEFS_BY_KEY, HubSensorDef
 
@@ -57,6 +66,11 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
         # source -> bool (last known availability)
         self.source_available: dict[str, bool] = {}
         self._unsub = None
+        self._unsub_registry = None
+        self._rediscover_cancel = None
+        self._store = Store(
+            hass, STORAGE_VERSION, STORAGE_KEY.format(entry_id=entry.entry_id)
+        )
 
     # ------------------------------------------------------------
     # Discovery
@@ -169,6 +183,32 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
     # ------------------------------------------------------------
     async def async_start(self) -> None:
         self.discover()
+        self._subscribe_states()
+        self._refresh_data()
+
+        # rediscover when new source entities appear in the registry
+        # (e.g. a source integration is installed or re-added later)
+        self._unsub_registry = self.hass.bus.async_listen(
+            er.EVENT_ENTITY_REGISTRY_UPDATED, self._handle_registry_event
+        )
+
+        await self._maybe_notify_initial_summary()
+
+    async def async_stop(self) -> None:
+        if self._unsub:
+            self._unsub()
+            self._unsub = None
+        if self._unsub_registry:
+            self._unsub_registry()
+            self._unsub_registry = None
+        if self._rediscover_cancel:
+            self._rediscover_cancel()
+            self._rediscover_cancel = None
+
+    def _subscribe_states(self) -> None:
+        if self._unsub:
+            self._unsub()
+            self._unsub = None
         tracked = sorted(
             {eid for sources in self.candidates.values() for eid in sources.values()}
         )
@@ -176,12 +216,134 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
             self._unsub = async_track_state_change_event(
                 self.hass, tracked, self._handle_state_change
             )
+
+    # ------------------------------------------------------------
+    # Discovery notifications
+    # ------------------------------------------------------------
+    def _summary_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for key in self.candidates:
+            device = SENSOR_DEFS_BY_KEY[key].device
+            counts[device] = counts.get(device, 0) + 1
+        return counts
+
+    def _format_counts(self, counts: dict[str, int]) -> str:
+        return ", ".join(
+            f"{DEVICE_NAMES[device]}: {n}" for device, n in sorted(counts.items())
+        )
+
+    async def _maybe_notify_initial_summary(self) -> None:
+        data = await self._store.async_load() or {}
+        if data.get("summary_shown"):
+            return
+        per_source = {
+            source: sum(
+                1 for c in self.candidates.values() if source in c
+            )
+            for source in self.priority
+        }
+        source_lines = ", ".join(
+            f"{SOURCE_NAMES.get(s, s)}: {n}" for s, n in per_source.items()
+        )
+        self._notify(
+            f"{DOMAIN}_summary",
+            f"Discovery completed: **{len(self.candidates)} entities** created "
+            f"({self._format_counts(self._summary_counts())}).\n\n"
+            f"Entities matched per source: {source_lines}.",
+        )
+        data["summary_shown"] = True
+        await self._store.async_save(data)
+
+    @callback
+    def _handle_registry_event(self, event: Event) -> None:
+        if event.data.get("action") not in ("create", "update"):
+            return
+        entity_id = event.data.get("entity_id", "")
+        if not entity_id.startswith("sensor."):
+            return
+        entry = er.async_get(self.hass).async_get(entity_id)
+        if not entry or entry.platform not in self.priority:
+            return
+        # debounce: sources create dozens of entities in a burst
+        if self._rediscover_cancel:
+            self._rediscover_cancel()
+        self._rediscover_cancel = async_call_later(
+            self.hass, 10, self._async_rediscover
+        )
+
+    async def _async_rediscover(self, _now=None) -> None:
+        self._rediscover_cancel = None
+        old_candidates = {k: dict(v) for k, v in self.candidates.items()}
+        self.discover()
+
+        new_keys = [k for k in self.candidates if k not in old_candidates]
+        gained = [
+            k
+            for k in self.candidates
+            if k in old_candidates
+            and set(self.candidates[k]) - set(old_candidates[k])
+        ]
+        if not new_keys and not gained:
+            return
+
+        self._subscribe_states()
         self._refresh_data()
 
-    async def async_stop(self) -> None:
-        if self._unsub:
-            self._unsub()
-            self._unsub = None
+        if new_keys:
+            async_dispatcher_send(
+                self.hass,
+                f"{SIGNAL_NEW_KEYS}_{self.entry.entry_id}",
+                new_keys,
+            )
+
+        # which sources triggered the change
+        changed_sources: set[str] = set()
+        for k in new_keys:
+            changed_sources.update(self.candidates[k])
+        for k in gained:
+            changed_sources.update(
+                set(self.candidates[k]) - set(old_candidates[k])
+            )
+        source_names = ", ".join(
+            SOURCE_NAMES.get(s, s) for s in sorted(changed_sources)
+        )
+
+        parts = []
+        if new_keys:
+            counts: dict[str, int] = {}
+            for k in new_keys:
+                device = SENSOR_DEFS_BY_KEY[k].device
+                counts[device] = counts.get(device, 0) + 1
+            parts.append(
+                f"**{len(new_keys)} new entities** created "
+                f"({self._format_counts(counts)})"
+            )
+        if gained:
+            parts.append(
+                f"**{len(gained)} existing entities** gained an additional "
+                "fallback source"
+            )
+        self._notify(
+            f"{DOMAIN}_rediscovery",
+            f"New data detected from {source_names}: " + "; ".join(parts) + ".",
+        )
+        _LOGGER.info(
+            "Rediscovery: %d new keys, %d gained fallback (%s)",
+            len(new_keys), len(gained), source_names,
+        )
+
+    def _notify(self, notification_id: str, message: str) -> None:
+        self.hass.async_create_task(
+            self.hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "notification_id": notification_id,
+                    "title": "Huawei Fusion Hub",
+                    "message": message,
+                },
+            )
+        )
 
     @callback
     def _handle_state_change(self, event: Event) -> None:
@@ -271,19 +433,10 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
         if not self.notify_on_disconnect:
             return
         if offline:
-            self.hass.async_create_task(
-                self.hass.services.async_call(
-                    "persistent_notification",
-                    "create",
-                    {
-                        "notification_id": f"{DOMAIN}_{source}_offline",
-                        "title": "Huawei Fusion Hub",
-                        "message": (
-                            f"Source **{name}** is offline. "
-                            "Values are now served by the next available source."
-                        ),
-                    },
-                )
+            self._notify(
+                f"{DOMAIN}_{source}_offline",
+                f"Source **{name}** is offline. "
+                "Values are now served by the next available source.",
             )
         else:
             self.hass.async_create_task(
@@ -292,4 +445,8 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                     "dismiss",
                     {"notification_id": f"{DOMAIN}_{source}_offline"},
                 )
+            )
+            self._notify(
+                f"{DOMAIN}_{source}_online",
+                f"Source **{name}** is back online.",
             )

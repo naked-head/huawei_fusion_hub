@@ -42,6 +42,8 @@ ATTR_CANDIDATES = "candidates"
 DEVICE_HUB = "hub"
 DEVICE_INVERTER = "inverter"
 DEVICE_BATTERY = "battery"
+DEVICE_BATTERY_UNIT_1 = "battery_unit_1"
+DEVICE_BATTERY_UNIT_2 = "battery_unit_2"
 DEVICE_METER = "meter"
 DEVICE_PLANT = "plant"
 
@@ -49,6 +51,15 @@ DEVICE_NAMES = {
     DEVICE_HUB: "Huawei Fusion Hub",
     DEVICE_INVERTER: "Inverter (HF Hub)",
     DEVICE_BATTERY: "Battery (HF Hub)",
+    DEVICE_BATTERY_UNIT_1: "Battery Unit 1 (HF Hub)",
+    DEVICE_BATTERY_UNIT_2: "Battery Unit 2 (HF Hub)",
     DEVICE_METER: "Power Meter (HF Hub)",
     DEVICE_PLANT: "Plant (HF Hub)",
 }
+
+# dispatcher signal for runtime-added entities (suffix: entry_id)
+SIGNAL_NEW_KEYS = f"{DOMAIN}_new_keys"
+
+# storage for one-time flags (suffix: entry_id)
+STORAGE_VERSION = 1
+STORAGE_KEY = f"{DOMAIN}.{{entry_id}}"

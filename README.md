@@ -38,27 +38,17 @@ You can change the priority and the alert behavior later from the integration's 
 
 ## Exposed entities
 
-Hub sensors are grouped into logical devices — **Inverter**, **Battery**, **Power Meter** and **Plant** — linked to the main *Huawei Fusion Hub* device, mirroring the device structure of the source integrations. Diagnostics (per-source connectivity) live on the hub device.
+The hub exposes **221 canonical sensors** — the complete union of the sensor entities provided by the three sources, including quantities available from a single source. Sensors are grouped into logical devices — **Inverter**, **Battery**, **Battery Unit 1/2**, **Power Meter** and **Plant** — linked to the main *Huawei Fusion Hub* device. Diagnostics (per-source connectivity) live on the hub device.
+
+The full correspondence table between hub entities and source entities is in **[ENTITY_MAP.md](ENTITY_MAP.md)**.
 
 Entity discovery is **language-independent**: entities are matched by registry unique_id (register names for Huawei Solar, numeric FusionSolar API signal ids for FusionSolarPlus with device-model disambiguation, sensor ids for FusionSolar), so the hub works regardless of your Home Assistant language or renamed entities. An object_id fallback covers older source versions.
 
-All entities are grouped under a single *Huawei Fusion Hub* device.
+## Notifications
 
-**Inverter**: `pv_active_power`, `pv_input_power`, `inverter_yield_today` / `_month` / `_year` / `_total`, `inverter_temperature`, `inverter_efficiency`, `inverter_power_factor`, `inverter_reactive_power`, `inverter_status`, `inverter_insulation_resistance`, `inverter_phase_a_voltage` / `_current`, `inverter_grid_frequency`
-
-**PV strings**: `pv_1_voltage` / `_current` / `_power`, `pv_2_voltage` / `_current` / `_power`
-
-**Meter / grid**: `meter_active_power`, `meter_reactive_power`, `meter_power_factor`, `meter_voltage`, `meter_current`, `meter_frequency`, `grid_exported_energy`, `grid_imported_energy`, `meter_status`
-
-**Battery**: `battery_soc`, `battery_power`, `battery_charged_today` / `_discharged_today`, `battery_total_charge` / `_discharge`, `battery_bus_voltage` / `_current`, `battery_temperature`, `battery_status`, `battery_working_mode`, `battery_rated_capacity`
-
-**Plant**: `plant_power`, `plant_energy_today` / `_month` / `_year` / `_total`
-
-**Consumption & flows**: `consumption_today`, `self_used_energy_today`, `pv_feed_in_energy_today`, `imported_grid_energy_today`, `self_consumption_ratio`, `grid_import_ratio`, `flow_battery_power`, `flow_load_power`, `flow_grid_power`
-
-**Diagnostics**: `binary_sensor.hf_hub_<source>_available` per source (connectivity device class).
-
-All sensor entity IDs use the `sensor.hf_hub_` prefix. A hub sensor is created only when at least one configured source provides that quantity — quantities available from a single source are exposed too, without failover.
+- **Initial summary**: on first setup, a persistent notification reports how many hub entities were created, grouped per device and per source.
+- **New source detected**: if you install or re-add a source integration later, the hub automatically discovers the new entities (no restart needed), creates the missing hub sensors and notifies you with grouped counts.
+- **Source offline/online**: when a source goes down or recovers you get a persistent notification (configurable in options), plus `huawei_fusion_hub_source_offline` / `_online` events on the bus for your automations.
 
 ## Automation example
 
