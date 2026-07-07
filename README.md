@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/naked-head/huawei-fusion-hub/main/custom_components/huawei_fusion_hub/brand/icon@2x.png" alt="Huawei Fusion Hub" width="120">
+  <img src="https://raw.githubusercontent.com/naked-head/huawei-fusion-hub/main/images/icon@2x.png" alt="Huawei Fusion Hub" width="120">
 </p>
 
 # Huawei Fusion Hub — Home Assistant Custom Integration
