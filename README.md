@@ -38,6 +38,10 @@ You can change the priority and the alert behavior later from the integration's 
 
 ## Exposed entities
 
+Hub sensors are grouped into logical devices — **Inverter**, **Battery**, **Power Meter** and **Plant** — linked to the main *Huawei Fusion Hub* device, mirroring the device structure of the source integrations. Diagnostics (per-source connectivity) live on the hub device.
+
+Entity discovery is **language-independent**: entities are matched by registry unique_id (register names for Huawei Solar, numeric FusionSolar API signal ids for FusionSolarPlus with device-model disambiguation, sensor ids for FusionSolar), so the hub works regardless of your Home Assistant language or renamed entities. An object_id fallback covers older source versions.
+
 All entities are grouped under a single *Huawei Fusion Hub* device.
 
 **Inverter**: `pv_active_power`, `pv_input_power`, `inverter_yield_today` / `_month` / `_year` / `_total`, `inverter_temperature`, `inverter_efficiency`, `inverter_power_factor`, `inverter_reactive_power`, `inverter_status`, `inverter_insulation_resistance`, `inverter_phase_a_voltage` / `_current`, `inverter_grid_frequency`

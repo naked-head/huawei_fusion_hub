@@ -12,6 +12,8 @@ from .const import (
     ATTR_CANDIDATES,
     ATTR_SOURCE,
     ATTR_SOURCE_ENTITY,
+    DEVICE_HUB,
+    DEVICE_NAMES,
     DOMAIN,
     ENTITY_PREFIX,
 )
@@ -45,11 +47,14 @@ class HubSensor(CoordinatorEntity[HubCoordinator], SensorEntity):
         self._attr_state_class = sensor_def.state_class
         self._attr_native_unit_of_measurement = sensor_def.unit
         self._attr_icon = sensor_def.icon
+        device = sensor_def.device
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, "hub")},
-            name="Huawei Fusion Hub",
+            identifiers={(DOMAIN, device)},
+            name=DEVICE_NAMES[device],
             manufacturer="naked-head",
+            model="Aggregated device",
             entry_type=DeviceEntryType.SERVICE,
+            via_device=(DOMAIN, DEVICE_HUB),
         )
 
     @property

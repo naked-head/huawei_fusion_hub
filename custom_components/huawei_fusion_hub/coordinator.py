@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.unit_conversion import (
@@ -64,15 +64,24 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
     def discover(self) -> None:
         """Scan entity registry and resolve candidate entities per canonical key."""
         registry = er.async_get(self.hass)
+        device_registry = dr.async_get(self.hass)
         overrides: dict[str, dict[str, str]] = self.entry.options.get(
             CONF_OVERRIDES, {}
         )
 
-        # index registry entries by platform (source domain)
-        by_source: dict[str, list[er.RegistryEntry]] = {s: [] for s in self.priority}
+        # index registry entries by platform (source domain),
+        # each entry paired with its device model (for FSP disambiguation)
+        by_source: dict[str, list[tuple[er.RegistryEntry, str]]] = {
+            s: [] for s in self.priority
+        }
         for entity in registry.entities.values():
             if entity.platform in by_source and entity.domain == "sensor":
-                by_source[entity.platform].append(entity)
+                model = ""
+                if entity.device_id:
+                    device = device_registry.async_get(entity.device_id)
+                    if device and device.model:
+                        model = device.model
+                by_source[entity.platform].append((entity, model))
 
         self.candidates = {}
         self.source_entities = {s: set() for s in self.priority}
@@ -97,30 +106,63 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
 
     @staticmethod
     def _match(
-        sensor_def: HubSensorDef, source: str, entities: list[er.RegistryEntry]
+        sensor_def: HubSensorDef,
+        source: str,
+        entities: list[tuple[er.RegistryEntry, str]],
     ) -> str | None:
-        """Exact object_id match first, then suffix match ('*_<pattern>').
+        """Two-layer, language-independent matching.
 
-        Suffix matching handles per-install prefixes such as
-        'homeassistant_<kioskid>_realtime_power' (FusionSolar kiosk) or
-        'fsp_ne_<plantid>_flow_grid_power' (FusionSolarPlus plant stats).
+        Layer 1 (primary): unique_id patterns from mapping.py. A pattern
+        matches when the unique_id equals it or ends with "_pattern" /
+        "-pattern" (case-insensitive). "Model:pattern" syntax restricts
+        the match to entities whose device model equals Model (needed
+        for FusionSolarPlus, which reuses numeric signal ids across
+        device types). When both the definition and the registry entry
+        declare a device class, they must agree.
+
+        Layer 2 (fallback): same logic against object_ids, for older
+        source versions with different unique_id schemes.
         """
-        patterns = sensor_def.matchers.get(source, [])
-        object_ids = {
-            e.entity_id.split(".", 1)[1]: e.entity_id for e in entities
-        }
-        for pattern in patterns:
-            if pattern in object_ids:
-                return object_ids[pattern]
-        for pattern in patterns:
-            suffix_matches = [
-                entity_id
-                for object_id, entity_id in object_ids.items()
-                if object_id.endswith(f"_{pattern}")
-            ]
-            if suffix_matches:
-                return sorted(suffix_matches, key=len)[0]
-        return None
+
+        def _find(patterns: list[str], attr: str) -> str | None:
+            for raw_pattern in patterns:
+                if ":" in raw_pattern:
+                    model_req, _, pattern = raw_pattern.partition(":")
+                else:
+                    model_req, pattern = None, raw_pattern
+                pattern = pattern.lower()
+                matches: list[tuple[int, str]] = []
+                for entity, model in entities:
+                    if model_req and model.lower() != model_req.lower():
+                        continue
+                    if attr == "unique_id":
+                        haystack = (entity.unique_id or "").lower()
+                    else:
+                        haystack = entity.entity_id.split(".", 1)[1].lower()
+                    if not (
+                        haystack == pattern
+                        or haystack.endswith(f"_{pattern}")
+                        or haystack.endswith(f"-{pattern}")
+                    ):
+                        continue
+                    if (
+                        sensor_def.device_class
+                        and entity.original_device_class
+                        and str(entity.original_device_class)
+                        != str(sensor_def.device_class)
+                    ):
+                        continue
+                    matches.append((len(haystack), entity.entity_id))
+                if matches:
+                    # shortest haystack wins: "SER_active_power" beats
+                    # "SER_power_meter_active_power" for "active_power"
+                    return sorted(matches)[0][1]
+            return None
+
+        result = _find(sensor_def.matchers.get(source, []), "unique_id")
+        if result:
+            return result
+        return _find(sensor_def.fallbacks.get(source, []), "object_id")
 
     # ------------------------------------------------------------
     # Runtime

@@ -11,7 +11,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, ENTITY_PREFIX, SOURCE_NAMES
+from .const import DEVICE_HUB, DEVICE_NAMES, DOMAIN, ENTITY_PREFIX, SOURCE_NAMES
 from .coordinator import HubCoordinator
 
 
@@ -38,8 +38,8 @@ class SourceAvailabilitySensor(CoordinatorEntity[HubCoordinator], BinarySensorEn
         self._attr_suggested_object_id = f"{ENTITY_PREFIX}_{source}_available"
         self._attr_name = f"{SOURCE_NAMES.get(source, source)} available"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, "hub")},
-            name="Huawei Fusion Hub",
+            identifiers={(DOMAIN, DEVICE_HUB)},
+            name=DEVICE_NAMES[DEVICE_HUB],
             manufacturer="naked-head",
             entry_type=DeviceEntryType.SERVICE,
         )

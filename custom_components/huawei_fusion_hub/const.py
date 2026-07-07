@@ -37,3 +37,18 @@ SOURCE_OFFLINE_THRESHOLD = 0.8
 ATTR_SOURCE = "source"
 ATTR_SOURCE_ENTITY = "source_entity"
 ATTR_CANDIDATES = "candidates"
+
+# --- Hub device groups ---
+DEVICE_HUB = "hub"
+DEVICE_INVERTER = "inverter"
+DEVICE_BATTERY = "battery"
+DEVICE_METER = "meter"
+DEVICE_PLANT = "plant"
+
+DEVICE_NAMES = {
+    DEVICE_HUB: "Huawei Fusion Hub",
+    DEVICE_INVERTER: "Inverter (HF Hub)",
+    DEVICE_BATTERY: "Battery (HF Hub)",
+    DEVICE_METER: "Power Meter (HF Hub)",
+    DEVICE_PLANT: "Plant (HF Hub)",
+}
