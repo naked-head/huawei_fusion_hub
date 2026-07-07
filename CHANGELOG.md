@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-07
+
+### Added
+
+- Options flow now allows adding or removing source integrations at any time, not just changing priority order.
+- Entity names are now fully localized via `translation_key`: English and Italian translations included for all 131 named sensors and binary sensors.
+- `icon@2x.png` (512×512) added to the `brand/` directory for correct display in HA device pages.
+
+### Changed
+
+- `brand/` directory renamed from `brands/` to match HACS specification.
+- README rewritten following the ha-ilmeteo template: badges, feature list, installation, configuration, automation examples.
+- Options flow priority step now preserves the previous order for unchanged sources when sources are added or removed.
+
 ## [0.3.0] - 2026-07-07
 
 ### Added
@@ -47,7 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Options flow to change priority and alert behavior without restart.
 - English and Italian translations.
 
-[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/naked-head/huawei-fusion-hub/releases/tag/v0.1.0

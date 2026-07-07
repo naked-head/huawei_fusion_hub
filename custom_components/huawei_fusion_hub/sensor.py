@@ -55,7 +55,7 @@ class HubSensor(CoordinatorEntity[HubCoordinator], SensorEntity):
         self._def = sensor_def
         self._attr_unique_id = f"{ENTITY_PREFIX}_{sensor_def.key}"
         self._attr_suggested_object_id = f"{ENTITY_PREFIX}_{sensor_def.key}"
-        self._attr_name = sensor_def.name
+        self._attr_translation_key = sensor_def.key
         self._attr_device_class = sensor_def.device_class
         self._attr_state_class = sensor_def.state_class
         self._attr_native_unit_of_measurement = sensor_def.unit

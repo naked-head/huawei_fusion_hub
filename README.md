@@ -1,58 +1,108 @@
-# Huawei Fusion Hub
+<p align="center">
+  <img src="https://raw.githubusercontent.com/naked-head/huawei-fusion-hub/main/custom_components/huawei_fusion_hub/brand/icon@2x.png" alt="Huawei Fusion Hub" width="120">
+</p>
 
-Failover aggregation layer for Huawei solar installations in Home Assistant.
+# Huawei Fusion Hub — Home Assistant Custom Integration
 
-If you monitor your Huawei inverter, battery and power meter through more than one integration — [Huawei Solar](https://github.com/wlcrs/huawei_solar) (local Modbus), [FusionSolar](https://github.com/tijsverkoyen/HomeAssistant-FusionSolar) (Kiosk/OpenAPI) or [FusionSolarPlus](https://github.com/JortvanSchijndel/FusionSolarPlus) — this integration exposes a **single, stable set of entities** that automatically falls back to the next available source when one disconnects.
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/release/naked-head/huawei-fusion-hub.svg)](https://github.com/naked-head/huawei-fusion-hub/releases)
+[![Validate](https://github.com/naked-head/huawei-fusion-hub/actions/workflows/validate.yml/badge.svg)](https://github.com/naked-head/huawei-fusion-hub/actions/workflows/validate.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Your automations reference `sensor.hf_hub_*` entities and keep working even when your Modbus connection drops or the cloud API is down.
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=naked-head&repository=huawei-fusion-hub&category=integration)
+
+A [Home Assistant](https://www.home-assistant.io/) integration that aggregates data from up to three Huawei solar monitoring integrations — **Huawei Solar** (local Modbus), **FusionSolar** (Kiosk/OpenAPI) and **FusionSolarPlus** — into a single, stable set of `sensor.hf_hub_*` entities with automatic priority-based failover.
+
+> **Why this exists:** the local Modbus connection ([Huawei Solar](https://github.com/wlcrs/huawei_solar)) is the most reactive and accurate source, but occasionally drops. The cloud sources ([FusionSolar](https://github.com/tijsverkoyen/HomeAssistant-FusionSolar), [FusionSolarPlus](https://github.com/JortvanSchijndel/FusionSolarPlus)) are more resilient but slower. This hub sits in front of all three and always serves the best available value — so your automations keep running regardless of which source is up.
+
+---
+
+## ⚠️ Important notes
+
+- This integration **does not communicate directly** with your inverter or any cloud service. It only reads entity states already published in Home Assistant by the source integrations — zero extra polling.
+- At least one of the three source integrations must be installed and configured. The hub works with any combination of one, two or all three.
+- Entity discovery is **language-independent**: matching is done on registry `unique_id` values (register names for Huawei Solar, numeric signal ids for FusionSolarPlus, sensor ids for FusionSolar), so the hub works regardless of your Home Assistant language or any renamed entities.
+- Unofficial project, not affiliated with Huawei Technologies Co., Ltd.
+
+---
 
 ## Features
 
-- **Priority-based failover** — for every quantity, the hub uses the highest-priority source currently available. Priority is configurable from the UI at any time.
-- **Works with any combination** — one, two or all three source integrations.
-- **Unified entities** — same entity IDs regardless of which source is serving the data. Units are normalized (W, kWh, °C) even when sources report differently (e.g. kW vs W).
-- **Source transparency** — every hub sensor exposes `source` and `source_entity` attributes so you always know where the current value comes from.
-- **Disconnect alerts** — one `binary_sensor` per source (`connectivity` device class), an event bus event (`huawei_fusion_hub_source_offline` / `_online`) and an optional persistent notification when a source goes down or recovers.
-- **Zero extra polling** — the hub never contacts your inverter or the cloud. It only reads states that the source integrations already publish in Home Assistant, reacting to state changes in real time.
+- **Priority-based failover**: for every quantity, the hub uses the highest-priority source that is currently available. Priority is configurable from the UI at any time — including adding or removing sources.
+- **221 canonical sensors** — the complete union of quantities from all three sources, including single-source entities. Sensors are grouped into logical devices: **Inverter**, **Battery**, **Battery Unit 1/2**, **Power Meter** and **Plant**.
+- **Stable entity IDs**: automations and dashboards keep working regardless of which source is active. Every hub sensor exposes `source` and `source_entity` attributes so you always know where the value is coming from.
+- **Automatic unit normalization**: values are converted to canonical units (W, kWh, °C) even when sources report differently (kW vs W, Wh vs kWh).
+- **Dynamic rediscovery**: when a source integration is added or re-enabled, the hub automatically discovers and creates the new hub entities — no restart needed — and notifies you with grouped counts.
+- **Source availability alerts**: a `binary_sensor` per source (connectivity device class), an event on the bus (`huawei_fusion_hub_source_offline` / `_online`), and configurable persistent notifications when a source goes down or recovers.
+- **Initial summary notification**: on first setup, a persistent notification reports how many entities were created, grouped per device and per source.
+- **Multi-language**: UI and entity names in English and Italian.
+
+---
 
 ## Installation
 
-### HACS (recommended)
+### Via HACS (recommended)
 
-1. Add this repository to HACS (or install it from the default catalog once accepted).
-2. Install **Huawei Fusion Hub** and restart Home Assistant.
-3. Go to *Settings → Devices & Services → Add Integration* and search for **Huawei Fusion Hub**.
+1. HACS → Integrations → ⋮ menu → **Custom repositories**
+2. Add `https://github.com/naked-head/huawei-fusion-hub`, category **Integration**
+3. Search for "Huawei Fusion Hub" and install
+4. Restart Home Assistant
 
 ### Manual
 
-Copy `custom_components/huawei_fusion_hub` into your `config/custom_components` folder and restart Home Assistant.
+1. Download the latest [release](https://github.com/naked-head/huawei-fusion-hub/releases/latest)
+2. Copy `custom_components/huawei_fusion_hub` into `/config/custom_components/`
+3. Restart Home Assistant
+
+---
+
+## Requirements
+
+At least one of the following integrations must be installed and configured before adding the hub:
+
+- [Huawei Solar](https://github.com/wlcrs/huawei_solar) — local Modbus, highest accuracy and frequency
+- [FusionSolar](https://github.com/tijsverkoyen/HomeAssistant-FusionSolar) — cloud Kiosk or Northbound API
+- [FusionSolarPlus](https://github.com/JortvanSchijndel/FusionSolarPlus) — cloud, direct credentials
+
+---
 
 ## Configuration
 
-Everything is configured from the UI:
+1. **Settings → Devices & Services → Add Integration → Huawei Fusion Hub**
+2. **Select sources**: installed integrations are auto-detected and pre-selected. You can select any combination.
+3. **Set priority** (if more than one source): order the sources — the hub always tries the first available one.
 
-1. **Select sources** — installed integrations are auto-detected and pre-selected.
-2. **Set priority** — order the sources; the first available one wins.
+### Changing sources or priority
 
-You can change the priority and the alert behavior later from the integration's **Configure** button, without restarting.
+Open the integration's three-dot menu → **Configure** (Options) at any time to:
+- **Add or remove** source integrations
+- **Change the priority order**
+- **Toggle disconnect notifications**
+
+No restart is needed when changing options.
+
+---
 
 ## Exposed entities
 
-The hub exposes **221 canonical sensors** — the complete union of the sensor entities provided by the three sources, including quantities available from a single source. Sensors are grouped into logical devices — **Inverter**, **Battery**, **Battery Unit 1/2**, **Power Meter** and **Plant** — linked to the main *Huawei Fusion Hub* device. Diagnostics (per-source connectivity) live on the hub device.
+The hub exposes **221 canonical sensors** grouped into logical devices. The full correspondence table between hub entities and source entities is in **[ENTITY_MAP.md](ENTITY_MAP.md)**.
 
-The full correspondence table between hub entities and source entities is in **[ENTITY_MAP.md](ENTITY_MAP.md)**.
+| Device | Entities |
+|---|---|
+| Inverter | 38 — active/reactive power, voltages, currents, yields, temperature, efficiency, PV strings… |
+| Power Meter | 28 — active/reactive power, frequencies, grid import/export energy, per-phase measurements… |
+| Battery | 14 — SoC, charge/discharge power, daily/total energy, bus voltage/current, status… |
+| Battery Unit 1 | 62 — unit-level and per-pack (3 packs): voltage, power, SoC, temperatures, discharge energy… |
+| Battery Unit 2 | 61 — same as Unit 1 |
+| Plant | 18 — realtime power, daily/monthly/yearly/total energy, consumption, self-consumption ratios, flows… |
 
-Entity discovery is **language-independent**: entities are matched by registry unique_id (register names for Huawei Solar, numeric FusionSolar API signal ids for FusionSolarPlus with device-model disambiguation, sensor ids for FusionSolar), so the hub works regardless of your Home Assistant language or renamed entities. An object_id fallback covers older source versions.
+A hub sensor is created only when at least one configured source provides that quantity. Sensors only available from a single source have no failover but keep a stable entity name.
 
-## Notifications
-
-- **Initial summary**: on first setup, a persistent notification reports how many hub entities were created, grouped per device and per source.
-- **New source detected**: if you install or re-add a source integration later, the hub automatically discovers the new entities (no restart needed), creates the missing hub sensors and notifies you with grouped counts.
-- **Source offline/online**: when a source goes down or recovers you get a persistent notification (configurable in options), plus `huawei_fusion_hub_source_offline` / `_online` events on the bus for your automations.
+---
 
 ## Automation example
 
-Alert when the local Modbus connection drops:
+Alert when the local Modbus connection drops and the hub falls back to cloud:
 
 ```yaml
 automation:
@@ -65,13 +115,45 @@ automation:
     actions:
       - action: notify.mobile_app_phone
         data:
-          message: "Huawei Solar (Modbus) is offline — hub switched to cloud fallback."
+          message: "Huawei Solar (Modbus) is offline — hub is now using cloud fallback."
 ```
 
-## How source availability is determined
+Or use the event bus directly for more granular control:
 
-A source is marked offline when more than 80% of its mapped entities are `unavailable` or `unknown`. This avoids false positives when a single entity is temporarily missing.
+```yaml
+automation:
+  - alias: "Hub source changed"
+    triggers:
+      - trigger: event
+        event_type: huawei_fusion_hub_source_offline
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          message: "{{ trigger.event.data.name }} went offline."
+```
+
+---
+
+## Source availability
+
+A source is marked offline when more than 80% of its mapped entities are `unavailable` or `unknown`. This threshold avoids false positives when only a single entity is temporarily missing.
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+
+---
 
 ## License
 
-GPL v3
+GPL-3.0-or-later — see [LICENSE](https://github.com/naked-head/huawei-fusion-hub/blob/main/LICENSE)
+
+## Disclaimer
+
+This is an unofficial integration and is not affiliated with, endorsed by, or supported by Huawei Technologies Co., Ltd. or any of its subsidiaries. Use at your own risk.
+
+## Acknowledgments
+
+Built with the assistance of [Claude](https://claude.ai) by Anthropic.

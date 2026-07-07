@@ -36,9 +36,7 @@ def _installed_sources(hass) -> list[str]:
 
 
 def _source_options(sources: list[str]) -> list[SelectOptionDict]:
-    return [
-        SelectOptionDict(value=s, label=SOURCE_NAMES[s]) for s in sources
-    ]
+    return [SelectOptionDict(value=s, label=SOURCE_NAMES[s]) for s in sources]
 
 
 class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -105,9 +103,7 @@ class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
         schema: dict[Any, Any] = {}
         for i, source in enumerate(self._sources):
             schema[vol.Required(f"priority_{i}", default=source)] = SelectSelector(
-                SelectSelectorConfig(
-                    options=options, mode=SelectSelectorMode.DROPDOWN
-                )
+                SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
             )
         return vol.Schema(schema)
 
@@ -115,7 +111,7 @@ class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title="Huawei Fusion Hub",
             data={
-                CONF_SOURCES: self._sources,
+                CONF_SOURCES: priority,   # sources = priority order at creation
                 CONF_PRIORITY: priority,
                 CONF_NOTIFY_ON_DISCONNECT: DEFAULT_NOTIFY_ON_DISCONNECT,
             },
@@ -128,17 +124,18 @@ class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class HubOptionsFlow(OptionsFlow):
-    """Re-order priority and toggle notifications at any time."""
+    """Options: add/remove sources, re-order priority, toggle notifications."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._entry = config_entry
+        self._sources: list[str] = []
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> Any:
-        sources: list[str] = self._entry.data[CONF_SOURCES]
-        current_priority: list[str] = self._entry.options.get(
-            CONF_PRIORITY, self._entry.data[CONF_PRIORITY]
+        # Current state
+        current_sources: list[str] = self._entry.options.get(
+            CONF_SOURCES, self._entry.data.get(CONF_SOURCES, [])
         )
         current_notify: bool = self._entry.options.get(
             CONF_NOTIFY_ON_DISCONNECT,
@@ -146,39 +143,81 @@ class HubOptionsFlow(OptionsFlow):
         )
 
         if user_input is not None:
-            priority = [user_input[f"priority_{i}"] for i in range(len(sources))]
-            if len(set(priority)) != len(priority):
+            self._sources = user_input[CONF_SOURCES]
+            self._notify = user_input[CONF_NOTIFY_ON_DISCONNECT]
+            if not self._sources:
                 return self.async_show_form(
                     step_id="init",
-                    data_schema=self._schema(sources, current_priority, current_notify),
+                    data_schema=self._init_schema(current_sources, current_notify),
+                    errors={"base": "no_sources"},
+                )
+            if len(self._sources) == 1:
+                # Single source: no priority step needed
+                return self.async_create_entry(
+                    title="",
+                    data={
+                        CONF_SOURCES: self._sources,
+                        CONF_PRIORITY: self._sources,
+                        CONF_NOTIFY_ON_DISCONNECT: self._notify,
+                    },
+                )
+            return await self.async_step_priority()
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self._init_schema(current_sources, current_notify),
+        )
+
+    def _init_schema(self, sources: list[str], notify: bool) -> vol.Schema:
+        return vol.Schema(
+            {
+                vol.Required(CONF_SOURCES, default=sources): SelectSelector(
+                    SelectSelectorConfig(
+                        options=_source_options(ALL_SOURCES),
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
+                vol.Required(CONF_NOTIFY_ON_DISCONNECT, default=notify): BooleanSelector(),
+            }
+        )
+
+    async def async_step_priority(
+        self, user_input: dict[str, Any] | None = None
+    ) -> Any:
+        current_priority: list[str] = self._entry.options.get(
+            CONF_PRIORITY, self._entry.data.get(CONF_PRIORITY, self._sources)
+        )
+        # Keep previous order for sources that are still selected
+        ordered = [s for s in current_priority if s in self._sources]
+        ordered += [s for s in self._sources if s not in ordered]
+
+        if user_input is not None:
+            priority = [user_input[f"priority_{i}"] for i in range(len(self._sources))]
+            if len(set(priority)) != len(priority):
+                return self.async_show_form(
+                    step_id="priority",
+                    data_schema=self._priority_schema(ordered),
                     errors={"base": "duplicate_priority"},
                 )
             return self.async_create_entry(
                 title="",
                 data={
+                    CONF_SOURCES: self._sources,
                     CONF_PRIORITY: priority,
-                    CONF_NOTIFY_ON_DISCONNECT: user_input[CONF_NOTIFY_ON_DISCONNECT],
+                    CONF_NOTIFY_ON_DISCONNECT: self._notify,
                 },
             )
 
         return self.async_show_form(
-            step_id="init",
-            data_schema=self._schema(sources, current_priority, current_notify),
+            step_id="priority", data_schema=self._priority_schema(ordered)
         )
 
-    def _schema(
-        self, sources: list[str], priority: list[str], notify: bool
-    ) -> vol.Schema:
-        options = _source_options(sources)
+    def _priority_schema(self, ordered: list[str]) -> vol.Schema:
+        options = _source_options(self._sources)
         schema: dict[Any, Any] = {}
-        for i in range(len(sources)):
-            default = priority[i] if i < len(priority) else sources[i]
-            schema[vol.Required(f"priority_{i}", default=default)] = SelectSelector(
-                SelectSelectorConfig(
-                    options=options, mode=SelectSelectorMode.DROPDOWN
-                )
+        for i, source in enumerate(ordered):
+            schema[vol.Required(f"priority_{i}", default=source)] = SelectSelector(
+                SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
             )
-        schema[
-            vol.Required(CONF_NOTIFY_ON_DISCONNECT, default=notify)
-        ] = BooleanSelector()
         return vol.Schema(schema)

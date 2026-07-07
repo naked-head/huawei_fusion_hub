@@ -11,7 +11,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEVICE_HUB, DEVICE_NAMES, DOMAIN, ENTITY_PREFIX, SOURCE_NAMES
+from .const import DEVICE_HUB, DEVICE_NAMES, DOMAIN, ENTITY_PREFIX
 from .coordinator import HubCoordinator
 
 
@@ -34,9 +34,10 @@ class SourceAvailabilitySensor(CoordinatorEntity[HubCoordinator], BinarySensorEn
     def __init__(self, coordinator: HubCoordinator, source: str) -> None:
         super().__init__(coordinator)
         self._source = source
-        self._attr_unique_id = f"{ENTITY_PREFIX}_{source}_available"
-        self._attr_suggested_object_id = f"{ENTITY_PREFIX}_{source}_available"
-        self._attr_name = f"{SOURCE_NAMES.get(source, source)} available"
+        uid = f"{ENTITY_PREFIX}_{source}_available"
+        self._attr_unique_id = uid
+        self._attr_suggested_object_id = uid
+        self._attr_translation_key = uid
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, DEVICE_HUB)},
             name=DEVICE_NAMES[DEVICE_HUB],
