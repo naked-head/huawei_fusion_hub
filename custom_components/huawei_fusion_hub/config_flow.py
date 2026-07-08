@@ -17,9 +17,11 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     ALL_SOURCES,
+    CONF_AGGREGATE_CONTROLS,
     CONF_NOTIFY_ON_DISCONNECT,
     CONF_PRIORITY,
     CONF_SOURCES,
+    DEFAULT_AGGREGATE_CONTROLS,
     DEFAULT_NOTIFY_ON_DISCONNECT,
     DOMAIN,
     SOURCE_NAMES,
@@ -46,6 +48,7 @@ class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._sources: list[str] = []
+        self._priority: list[str] = []
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -62,7 +65,8 @@ class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors={"base": "no_sources"},
                 )
             if len(self._sources) == 1:
-                return self._create(self._sources)
+                self._priority = self._sources
+                return await self.async_step_controls()
             return await self.async_step_priority()
 
         return self.async_show_form(step_id="user", data_schema=self._user_schema())
@@ -92,7 +96,8 @@ class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
                     data_schema=self._priority_schema(),
                     errors={"base": "duplicate_priority"},
                 )
-            return self._create(priority)
+            self._priority = priority
+            return await self.async_step_controls()
 
         return self.async_show_form(
             step_id="priority", data_schema=self._priority_schema()
@@ -107,14 +112,29 @@ class HuaweiFusionHubConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         return vol.Schema(schema)
 
-    def _create(self, priority: list[str]) -> Any:
-        return self.async_create_entry(
-            title="Huawei Fusion Hub",
-            data={
-                CONF_SOURCES: priority,   # sources = priority order at creation
-                CONF_PRIORITY: priority,
-                CONF_NOTIFY_ON_DISCONNECT: DEFAULT_NOTIFY_ON_DISCONNECT,
-            },
+    async def async_step_controls(
+        self, user_input: dict[str, Any] | None = None
+    ) -> Any:
+        if user_input is not None:
+            return self.async_create_entry(
+                title="Huawei Fusion Hub",
+                data={
+                    CONF_SOURCES: self._priority,
+                    CONF_PRIORITY: self._priority,
+                    CONF_NOTIFY_ON_DISCONNECT: DEFAULT_NOTIFY_ON_DISCONNECT,
+                    CONF_AGGREGATE_CONTROLS: user_input[CONF_AGGREGATE_CONTROLS],
+                },
+            )
+        return self.async_show_form(
+            step_id="controls",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_AGGREGATE_CONTROLS,
+                        default=DEFAULT_AGGREGATE_CONTROLS,
+                    ): BooleanSelector()
+                }
+            ),
         )
 
     @staticmethod
@@ -129,6 +149,9 @@ class HubOptionsFlow(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._entry = config_entry
         self._sources: list[str] = []
+        self._priority: list[str] = []
+        self._notify: bool = True
+        self._controls_default: bool = False
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -141,6 +164,10 @@ class HubOptionsFlow(OptionsFlow):
             CONF_NOTIFY_ON_DISCONNECT,
             self._entry.data.get(CONF_NOTIFY_ON_DISCONNECT, True),
         )
+        current_controls: bool = self._entry.options.get(
+            CONF_AGGREGATE_CONTROLS,
+            self._entry.data.get(CONF_AGGREGATE_CONTROLS, False),
+        )
 
         if user_input is not None:
             self._sources = user_input[CONF_SOURCES]
@@ -148,27 +175,27 @@ class HubOptionsFlow(OptionsFlow):
             if not self._sources:
                 return self.async_show_form(
                     step_id="init",
-                    data_schema=self._init_schema(current_sources, current_notify),
+                    data_schema=self._init_schema(
+                        current_sources, current_notify, current_controls
+                    ),
                     errors={"base": "no_sources"},
                 )
             if len(self._sources) == 1:
-                # Single source: no priority step needed
-                return self.async_create_entry(
-                    title="",
-                    data={
-                        CONF_SOURCES: self._sources,
-                        CONF_PRIORITY: self._sources,
-                        CONF_NOTIFY_ON_DISCONNECT: self._notify,
-                    },
-                )
+                self._priority = self._sources
+                return await self.async_step_controls()
             return await self.async_step_priority()
 
         return self.async_show_form(
             step_id="init",
-            data_schema=self._init_schema(current_sources, current_notify),
+            data_schema=self._init_schema(
+                current_sources, current_notify, current_controls
+            ),
         )
 
-    def _init_schema(self, sources: list[str], notify: bool) -> vol.Schema:
+    def _init_schema(
+        self, sources: list[str], notify: bool, controls: bool
+    ) -> vol.Schema:
+        self._controls_default = controls
         return vol.Schema(
             {
                 vol.Required(CONF_SOURCES, default=sources): SelectSelector(
@@ -200,14 +227,8 @@ class HubOptionsFlow(OptionsFlow):
                     data_schema=self._priority_schema(ordered),
                     errors={"base": "duplicate_priority"},
                 )
-            return self.async_create_entry(
-                title="",
-                data={
-                    CONF_SOURCES: self._sources,
-                    CONF_PRIORITY: priority,
-                    CONF_NOTIFY_ON_DISCONNECT: self._notify,
-                },
-            )
+            self._priority = priority
+            return await self.async_step_controls()
 
         return self.async_show_form(
             step_id="priority", data_schema=self._priority_schema(ordered)
@@ -221,3 +242,28 @@ class HubOptionsFlow(OptionsFlow):
                 SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
             )
         return vol.Schema(schema)
+
+    async def async_step_controls(
+        self, user_input: dict[str, Any] | None = None
+    ) -> Any:
+        if user_input is not None:
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_SOURCES: self._sources,
+                    CONF_PRIORITY: self._priority,
+                    CONF_NOTIFY_ON_DISCONNECT: self._notify,
+                    CONF_AGGREGATE_CONTROLS: user_input[CONF_AGGREGATE_CONTROLS],
+                },
+            )
+        return self.async_show_form(
+            step_id="controls",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_AGGREGATE_CONTROLS,
+                        default=self._controls_default,
+                    ): BooleanSelector()
+                }
+            ),
+        )

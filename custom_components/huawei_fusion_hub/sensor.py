@@ -60,6 +60,7 @@ class HubSensor(CoordinatorEntity[HubCoordinator], SensorEntity):
         self._attr_state_class = sensor_def.state_class
         self._attr_native_unit_of_measurement = sensor_def.unit
         self._attr_icon = sensor_def.icon
+        self._attr_entity_category = sensor_def.category
         device = sensor_def.device
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, device)},

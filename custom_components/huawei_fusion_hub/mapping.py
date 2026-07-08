@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
+    EntityCategory,
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
@@ -40,6 +41,12 @@ FS = SOURCE_FUSION_SOLAR
 FSP = SOURCE_FUSION_SOLAR_PLUS
 
 INV = "Inverter"
+# FusionSolar (OpenAPI) device models — matched with startswith
+FS_RINV = "Residential inverter"
+FS_SINV = "String inverter"
+FS_BAT = "Battery"
+FS_PWS = "Power Sensor"
+FS_GM = "Grid meter"
 BAT = "Battery"
 PWS = "Power Sensor"
 PLT = "Plant"
@@ -56,6 +63,7 @@ class HubSensorDef:
     icon: str | None = None
     matchers: dict[str, list[str]] = field(default_factory=dict)
     fallbacks: dict[str, list[str]] = field(default_factory=dict)
+    category: EntityCategory | None = None
 
 
 # kind -> (device_class, state_class, unit)
@@ -77,7 +85,7 @@ _KINDS = {
 }
 
 
-def _def(key, name, device, kind, hs=None, fsp=None, fs=None, icon=None):
+def _def(key, name, device, kind, hs=None, fsp=None, fs=None, icon=None, diagnostic=False):
     device_class, state_class, unit = _KINDS[kind]
     matchers: dict[str, list[str]] = {}
     if hs:
@@ -90,6 +98,7 @@ def _def(key, name, device, kind, hs=None, fsp=None, fs=None, icon=None):
         key=key, name=name, device=device, device_class=device_class,
         state_class=state_class, unit=unit, icon=icon, matchers=matchers,
         fallbacks=_FALLBACKS.get(key, {}),
+        category=EntityCategory.DIAGNOSTIC if diagnostic else None,
     )
 
 
@@ -164,102 +173,132 @@ def _build() -> list[HubSensorDef]:
 
     # ---------------- Inverter ----------------
     d(_def("inverter_rated_power", "Rated power", DI, "power",
-           hs="rated_power", fsp=f"{INV}:10006"))
-    d(_def("inverter_p_max", "P max", DI, "power", hs="p_max"))
+           hs="rated_power", fsp=f"{INV}:10006", diagnostic=True))
+    d(_def("inverter_p_max", "P max", DI, "power", hs="p_max", diagnostic=True))
     d(_def("pv_input_power", "PV input power", DI, "power",
-           hs="input_power", fsp=f"{PLT}:flow_solar_power", icon="mdi:solar-power"))
+           hs="input_power", fsp=f"{PLT}:flow_solar_power", icon="mdi:solar-power",
+           fs=[f"{FS_RINV}:mppt_power", f"{FS_SINV}:mppt_power"]))
     d(_def("inverter_line_voltage_a_b", "Line voltage A-B", DI, "voltage",
-           hs="line_voltage_a_b"))
+           hs="line_voltage_a_b",
+           fs=[f"{FS_RINV}:ab_u", f"{FS_SINV}:ab_u"]))
     d(_def("inverter_line_voltage_b_c", "Line voltage B-C", DI, "voltage",
-           hs="line_voltage_b_c"))
+           hs="line_voltage_b_c",
+           fs=[f"{FS_RINV}:bc_u", f"{FS_SINV}:bc_u"]))
     d(_def("inverter_line_voltage_c_a", "Line voltage C-A", DI, "voltage",
-           hs="line_voltage_c_a"))
+           hs="line_voltage_c_a",
+           fs=[f"{FS_RINV}:ca_u", f"{FS_SINV}:ca_u"]))
     d(_def("inverter_phase_a_voltage", "Phase A voltage", DI, "voltage",
-           hs="phase_a_voltage", fsp=[f"{INV}:10011", f"{INV}:10008"]))
+           hs="phase_a_voltage", fsp=[f"{INV}:10011", f"{INV}:10008"],
+           fs=[f"{FS_RINV}:a_u", f"{FS_SINV}:a_u"]))
     d(_def("inverter_phase_b_voltage", "Phase B voltage", DI, "voltage",
-           hs="phase_b_voltage", fsp=f"{INV}:10012"))
+           hs="phase_b_voltage", fsp=f"{INV}:10012",
+           fs=[f"{FS_RINV}:b_u", f"{FS_SINV}:b_u"]))
     d(_def("inverter_phase_c_voltage", "Phase C voltage", DI, "voltage",
-           hs="phase_c_voltage", fsp=f"{INV}:10013"))
+           hs="phase_c_voltage", fsp=f"{INV}:10013",
+           fs=[f"{FS_RINV}:c_u", f"{FS_SINV}:c_u"]))
     d(_def("inverter_phase_a_current", "Phase A current", DI, "current",
-           hs="phase_a_current", fsp=f"{INV}:10014"))
+           hs="phase_a_current", fsp=f"{INV}:10014",
+           fs=[f"{FS_RINV}:a_i", f"{FS_SINV}:a_i"]))
     d(_def("inverter_phase_b_current", "Phase B current", DI, "current",
-           hs="phase_b_current", fsp=f"{INV}:10015"))
+           hs="phase_b_current", fsp=f"{INV}:10015",
+           fs=[f"{FS_RINV}:b_i", f"{FS_SINV}:b_i"]))
     d(_def("inverter_phase_c_current", "Phase C current", DI, "current",
-           hs="phase_c_current", fsp=f"{INV}:10016"))
+           hs="phase_c_current", fsp=f"{INV}:10016",
+           fs=[f"{FS_RINV}:c_i", f"{FS_SINV}:c_i"]))
     d(_def("inverter_day_active_power_peak", "Day active power peak", DI, "power",
            hs="day_active_power_peak"))
     d(_def("pv_active_power", "PV active power", DI, "power",
-           hs="active_power", fsp=f"{INV}:10018"))
+           hs="active_power", fsp=f"{INV}:10018",
+           fs=[f"{FS_RINV}:active_power", f"{FS_SINV}:active_power"]))
     d(_def("inverter_reactive_power", "Reactive power", DI, "reactive",
-           hs="reactive_power", fsp=f"{INV}:10019"))
+           hs="reactive_power", fsp=f"{INV}:10019",
+           fs=[f"{FS_RINV}:reactive_power", f"{FS_SINV}:reactive_power"]))
     d(_def("inverter_power_factor", "Power factor", DI, "pf",
-           hs="power_factor", fsp=f"{INV}:10020"))
+           hs="power_factor", fsp=f"{INV}:10020",
+           fs=[f"{FS_RINV}:power_factor", f"{FS_SINV}:power_factor"]))
     d(_def("inverter_grid_frequency", "Grid frequency", DI, "freq",
-           hs="grid_frequency", fsp=f"{INV}:10021"))
+           hs="grid_frequency", fsp=f"{INV}:10021",
+           fs=[f"{FS_RINV}:elec_freq", f"{FS_SINV}:elec_freq"]))
     d(_def("inverter_efficiency", "Efficiency", DI, "percent",
-           hs="efficiency", icon="mdi:percent"))
+           hs="efficiency", icon="mdi:percent",
+           fs=[f"{FS_RINV}:efficiency", f"{FS_SINV}:efficiency"]))
     d(_def("inverter_temperature", "Temperature", DI, "temp",
-           hs="internal_temperature", fsp=f"{INV}:10023"))
+           hs="internal_temperature", fsp=f"{INV}:10023",
+           fs=[f"{FS_RINV}:temperature", f"{FS_SINV}:temperature"]))
     d(_def("inverter_insulation_resistance", "Insulation resistance", DI,
            "resistance", hs="insulation_resistance", fsp=f"{INV}:10024",
-           icon="mdi:omega"))
+           icon="mdi:omega", diagnostic=True))
     d(_def("inverter_status", "Status", DI, "text",
-           hs="device_status", fsp=f"{INV}:10025", icon="mdi:power-settings"))
+           hs="device_status", fsp=f"{INV}:10025", icon="mdi:power-settings",
+           fs=[f"{FS_RINV}:inverter_state", f"{FS_SINV}:inverter_state"], diagnostic=True))
     d(_def("inverter_startup_time", "Last startup time", DI, "text",
-           hs="startup_time", fsp=f"{INV}:10027", icon="mdi:clock-start"))
+           hs="startup_time", fsp=f"{INV}:10027", icon="mdi:clock-start",
+           fs=[f"{FS_RINV}:open_time", f"{FS_SINV}:open_time"], diagnostic=True))
     d(_def("inverter_shutdown_time", "Last shutdown time", DI, "text",
-           hs="shutdown_time", fsp=f"{INV}:10028", icon="mdi:clock-end"))
+           hs="shutdown_time", fsp=f"{INV}:10028", icon="mdi:clock-end",
+           fs=[f"{FS_RINV}:close_time", f"{FS_SINV}:close_time"], diagnostic=True))
     d(_def("inverter_yield_total", "Yield total", DI, "energy",
-           hs="accumulated_yield_energy", fsp=f"{INV}:10029"))
+           hs="accumulated_yield_energy", fsp=f"{INV}:10029",
+           fs=[f"{FS_RINV}:total_cap", f"{FS_SINV}:total_cap"]))
     d(_def("inverter_total_dc_input_energy", "Total DC input energy", DI,
            "energy", hs="total_dc_input_power"))
     d(_def("inverter_statistics_time", "Statistics time", DI, "text",
            hs="current_electricity_generation_statistics_time",
-           icon="mdi:clock-outline"))
+           icon="mdi:clock-outline", diagnostic=True))
     d(_def("inverter_yield_hour", "Yield this hour", DI, "energy",
            hs="hourly_yield_energy"))
     d(_def("inverter_yield_today", "Yield today", DI, "energy",
-           hs="daily_yield_energy", fsp=f"{INV}:10032"))
+           hs="daily_yield_energy", fsp=f"{INV}:10032",
+           fs=[f"{FS_RINV}:day_cap", f"{FS_SINV}:day_cap"]))
     d(_def("inverter_yield_month", "Yield this month", DI, "energy",
            hs="monthly_yield_energy"))
     d(_def("inverter_yield_year", "Yield this year", DI, "energy",
            hs="yearly_yield_energy"))
     d(_def("inverter_state_1", "State 1", DI, "text", hs="state_1",
-           icon="mdi:state-machine"))
+           icon="mdi:state-machine", diagnostic=True))
     d(_def("inverter_output_mode", "Output mode", DI, "text",
-           fsp=f"{INV}:21029", icon="mdi:sine-wave"))
+           fsp=f"{INV}:21029", icon="mdi:sine-wave", diagnostic=True))
     for n, (v, c, p) in {1: ("11001", "11002", "11003"),
                          2: ("11004", "11005", "11006")}.items():
         d(_def(f"pv_{n}_voltage", f"PV string {n} voltage", DI, "voltage",
-               hs=f"pv_0{n}_voltage", fsp=f"{INV}:{v}"))
+               hs=f"pv_0{n}_voltage", fsp=f"{INV}:{v}",
+               fs=[f"{FS_RINV}:pv{n}_u", f"{FS_SINV}:pv{n}_u"]))
         d(_def(f"pv_{n}_current", f"PV string {n} current", DI, "current",
-               hs=f"pv_0{n}_current", fsp=f"{INV}:{c}"))
+               hs=f"pv_0{n}_current", fsp=f"{INV}:{c}",
+               fs=[f"{FS_RINV}:pv{n}_i", f"{FS_SINV}:pv{n}_i"]))
         d(_def(f"pv_{n}_power", f"PV string {n} power", DI, "power",
                fsp=f"{INV}:{p}", icon="mdi:solar-panel"))
 
     # ---------------- Power Meter ----------------
     d(_def("meter_status", "Status", DM, "text",
-           hs="meter_status", fsp=f"{PWS}:10001", icon="mdi:meter-electric"))
+           hs="meter_status", fsp=f"{PWS}:10001", icon="mdi:meter-electric",
+           fs=[f"{FS_PWS}:meter_status"], diagnostic=True))
     d(_def("meter_active_power", "Active power", DM, "power",
            hs="power_meter_active_power",
            fsp=[f"{PWS}:10004", f"{PWS}:11207", f"{PWS}:2101271"],
-           icon="mdi:transmission-tower"))
+           icon="mdi:transmission-tower",
+           fs=[f"{FS_PWS}:active_power", f"{FS_GM}:active_power"]))
     d(_def("meter_reactive_power", "Reactive power", DM, "reactive",
            hs="power_meter_reactive_power",
-           fsp=[f"{PWS}:10005", f"{PWS}:11208", f"{PWS}:2101272"]))
+           fsp=[f"{PWS}:10005", f"{PWS}:11208", f"{PWS}:2101272"],
+           fs=[f"{FS_PWS}:reactive_power", f"{FS_GM}:reactive_power"]))
     d(_def("meter_power_factor", "Power factor", DM, "pf",
            hs="active_grid_power_factor",
-           fsp=[f"{PWS}:10006", f"{PWS}:10014", f"{PWS}:2101280"]))
+           fsp=[f"{PWS}:10006", f"{PWS}:10014", f"{PWS}:2101280"],
+           fs=[f"{FS_PWS}:power_factor", f"{FS_GM}:power_factor"]))
     d(_def("meter_frequency", "Grid frequency", DM, "freq",
-           hs="active_grid_frequency", fsp=f"{PWS}:10007"))
+           hs="active_grid_frequency", fsp=f"{PWS}:10007",
+           fs=[f"{FS_PWS}:grid_frequency", f"{FS_GM}:grid_frequency", f"{FS_RINV}:elec_freq"]))
     d(_def("grid_exported_energy", "Grid exported energy", DM, "energy",
            hs="grid_exported_energy", fsp=[f"{PWS}:10008", f"{PWS}:11116"],
-           icon="mdi:transmission-tower-import"))
+           icon="mdi:transmission-tower-import",
+           fs=[f"{FS_PWS}:reverse_active_cap", f"{FS_GM}:reverse_active_cap"]))
     d(_def("grid_imported_energy", "Grid imported energy", DM, "energy",
            hs="grid_accumulated_energy", fsp=[f"{PWS}:10009", f"{PWS}:11115"],
-           icon="mdi:transmission-tower-export"))
+           icon="mdi:transmission-tower-export",
+           fs=[f"{FS_PWS}:active_cap", f"{FS_GM}:active_cap"]))
     d(_def("meter_reactive_energy", "Reactive energy", DM, "text",
-           hs="grid_accumulated_reactive_power", icon="mdi:counter"))
+           hs="grid_accumulated_reactive_power", icon="mdi:counter", diagnostic=True))
     for ph, (hsv, fspv, hsc, fspc, hsp, fspp) in {
         "a": ("grid_a_voltage", [f"{PWS}:10002", f"{PWS}:11204", f"{PWS}:2101256"],
               "active_grid_a_current", [f"{PWS}:10003", f"{PWS}:2101268"],
@@ -272,67 +311,82 @@ def _build() -> list[HubSensorDef]:
               "active_grid_c_power", [f"{PWS}:10021", f"{PWS}:2101283"]),
     }.items():
         d(_def(f"meter_phase_{ph}_voltage", f"Phase {ph.upper()} voltage",
-               DM, "voltage", hs=hsv, fsp=fspv))
+               DM, "voltage", hs=hsv, fsp=fspv,
+               fs=[f"{FS_PWS}:{ph}_u", f"{FS_GM}:{ph}_u"]))
         d(_def(f"meter_phase_{ph}_current", f"Phase {ph.upper()} current",
-               DM, "current", hs=hsc, fsp=fspc))
+               DM, "current", hs=hsc, fsp=fspc,
+               fs=[f"{FS_PWS}:{ph}_i", f"{FS_GM}:{ph}_i"]))
         d(_def(f"meter_phase_{ph}_active_power", f"Phase {ph.upper()} active power",
-               DM, "power", hs=hsp, fsp=fspp))
+               DM, "power", hs=hsp, fsp=fspp,
+               fs=[f"{FS_PWS}:active_power_{ph}", f"{FS_GM}:active_power_{ph}"]))
     d(_def("meter_line_voltage_a_b", "Line voltage A-B", DM, "voltage",
-           hs="active_grid_a_b_voltage", fsp=f"{PWS}:2101252"))
+           hs="active_grid_a_b_voltage", fsp=f"{PWS}:2101252",
+           fs=[f"{FS_PWS}:ab_u", f"{FS_GM}:ab_u"]))
     d(_def("meter_line_voltage_b_c", "Line voltage B-C", DM, "voltage",
-           hs="active_grid_b_c_voltage", fsp=f"{PWS}:2101253"))
+           hs="active_grid_b_c_voltage", fsp=f"{PWS}:2101253",
+           fs=[f"{FS_PWS}:bc_u", f"{FS_GM}:bc_u"]))
     d(_def("meter_line_voltage_c_a", "Line voltage C-A", DM, "voltage",
-           hs="active_grid_c_a_voltage", fsp=f"{PWS}:2101254"))
+           hs="active_grid_c_a_voltage", fsp=f"{PWS}:2101254",
+           fs=[f"{FS_PWS}:ca_u", f"{FS_GM}:ca_u"]))
     d(_def("meter_rs485_port_mode", "RS485-2 port mode", DM, "text",
-           fsp=f"{PWS}:230700283"))
+           fsp=f"{PWS}:230700283", diagnostic=True))
     d(_def("meter_wifi_signal_strength", "WiFi signal strength", DM, "text",
-           fsp=f"{PWS}:15101", icon="mdi:wifi"))
+           fsp=f"{PWS}:15101", icon="mdi:wifi", diagnostic=True))
     d(_def("meter_signal_strength", "Signal strength", DM, "text",
-           fsp=f"{PWS}:15102", icon="mdi:signal"))
+           fsp=f"{PWS}:15102", icon="mdi:signal", diagnostic=True))
     d(_def("meter_communication_status", "Communication status", DM, "text",
-           fsp=[f"{PWS}:2101249", f"{PWS}:2101602"], icon="mdi:lan-connect"))
-    d(_def("meter_iacmeter", "iAcMeter", DM, "text", fsp=f"{PWS}:2101600"))
+           fsp=[f"{PWS}:2101249", f"{PWS}:2101602"], icon="mdi:lan-connect", diagnostic=True))
+    d(_def("meter_iacmeter", "iAcMeter", DM, "text", fsp=f"{PWS}:2101600", diagnostic=True))
     d(_def("meter_iacmeter_ip", "iAcMeter IP", DM, "text",
-           fsp=f"{PWS}:2101601", icon="mdi:ip-network"))
+           fsp=f"{PWS}:2101601", icon="mdi:ip-network", diagnostic=True))
     d(_def("meter_iacmeter_mode", "iAcMeter mode", DM, "text",
-           fsp=f"{PWS}:2101605"))
+           fsp=f"{PWS}:2101605", diagnostic=True))
     d(_def("meter_data_source", "Meter data source", DM, "text",
-           fsp=f"{PWS}:2101606"))
+           fsp=f"{PWS}:2101606", diagnostic=True))
 
     # ---------------- Battery (system) ----------------
     d(_def("battery_soc", "State of charge", DB, "battery",
-           hs="storage_state_of_capacity", fsp=f"{BAT}:10006"))
+           hs="storage_state_of_capacity", fsp=f"{BAT}:10006",
+           fs=[f"{FS_BAT}:battery_soc"]))
     d(_def("battery_power", "Charge/discharge power", DB, "power",
            hs="storage_charge_discharge_power", fsp=f"{BAT}:10004",
-           icon="mdi:battery-charging"))
+           icon="mdi:battery-charging",
+           fs=[f"{FS_BAT}:ch_discharge_power"]))
     d(_def("battery_charged_today", "Charged today", DB, "energy",
            hs="storage_current_day_charge_capacity", fsp=f"{BAT}:10001",
-           icon="mdi:battery-plus"))
+           icon="mdi:battery-plus",
+           fs=[f"{FS_BAT}:charge_cap"]))
     d(_def("battery_discharged_today", "Discharged today", DB, "energy",
            hs="storage_current_day_discharge_capacity", fsp=f"{BAT}:10002",
-           icon="mdi:battery-minus"))
+           icon="mdi:battery-minus",
+           fs=[f"{FS_BAT}:discharge_cap"]))
     d(_def("battery_total_charge", "Total charge", DB, "energy",
            hs="storage_total_charge"))
     d(_def("battery_total_discharge", "Total discharge", DB, "energy",
            hs="storage_total_discharge"))
     d(_def("battery_status", "Status", DB, "text",
            hs="storage_running_status", fsp=f"{BAT}:10003",
-           icon="mdi:battery-heart-variant"))
+           icon="mdi:battery-heart-variant",
+           fs=[f"{FS_BAT}:battery_status"], diagnostic=True))
     d(_def("battery_bus_voltage", "Bus voltage", DB, "voltage",
-           hs="storage_bus_voltage", fsp=f"{BAT}:10005"))
+           hs="storage_bus_voltage", fsp=f"{BAT}:10005",
+           fs=[f"{FS_BAT}:busbar_u"]))
     d(_def("battery_bus_current", "Bus current", DB, "current",
            hs="storage_bus_current"))
     d(_def("battery_rated_capacity", "Rated capacity", DB, "energy_storage",
            hs="storage_rated_capacity", fsp=f"{BAT}:10013",
-           icon="mdi:battery-high"))
+           icon="mdi:battery-high", diagnostic=True))
     d(_def("battery_max_charge_power", "Maximum charge power", DB, "power",
-           hs="storage_maximum_charge_power"))
+           hs="storage_maximum_charge_power",
+           fs=[f"{FS_BAT}:max_charge_power"], diagnostic=True))
     d(_def("battery_max_discharge_power", "Maximum discharge power", DB, "power",
-           hs="storage_maximum_discharge_power"))
+           hs="storage_maximum_discharge_power",
+           fs=[f"{FS_BAT}:max_discharge_power"], diagnostic=True))
     d(_def("battery_working_mode", "Working mode", DB, "text",
-           fsp=f"{BAT}:10008", icon="mdi:battery-sync"))
+           fsp=f"{BAT}:10008", icon="mdi:battery-sync",
+           fs=[f"{FS_BAT}:ch_discharge_model"], diagnostic=True))
     d(_def("battery_backup_time", "Backup time", DB, "minutes",
-           fsp=f"{BAT}:10015"))
+           fsp=f"{BAT}:10015", diagnostic=True))
 
     # ---------------- Battery units 1-2 (HS units <-> FSP modules) ----------------
     # FSP module signal ids per unit, extracted from FSP battery const.py
@@ -516,3 +570,61 @@ def _build() -> list[HubSensorDef]:
 
 SENSOR_DEFS: list[HubSensorDef] = _build()
 SENSOR_DEFS_BY_KEY = {d.key: d for d in SENSOR_DEFS}
+
+@dataclass(frozen=True)
+class HubControlDef:
+    """Writable control proxied from a source integration.
+
+    Controls have no failover: only huawei_solar (Modbus) provides
+    writable entities. The hub entity mirrors the source state and
+    forwards commands to the source entity via service calls.
+    """
+    key: str
+    name: str
+    device: str
+    platform: str  # "switch" | "select"
+    matchers: dict[str, list[str]] = field(default_factory=dict)
+    fallbacks: dict[str, list[str]] = field(default_factory=dict)
+    icon: str | None = None
+
+
+CONTROL_DEFS: list[HubControlDef] = [
+    HubControlDef(
+        key="inverter_power", name="Inverter", device=DEVICE_INVERTER,
+        platform="switch", icon="mdi:power",
+        matchers={HS: ["startup"]},
+        fallbacks={HS: ["inverter_inverter_on_off", "inverter_on_off"]},
+    ),
+    HubControlDef(
+        key="battery_charge_from_grid", name="Charge from grid",
+        device=DEVICE_BATTERY, platform="switch", icon="mdi:battery-charging-outline",
+        matchers={HS: ["storage_charge_from_grid_function"]},
+        fallbacks={HS: ["battery_charge_from_grid"]},
+    ),
+    HubControlDef(
+        key="mppt_multimodal_scanning", name="MPPT multimodal scanning",
+        device=DEVICE_INVERTER, platform="switch", icon="mdi:sun-compass",
+        matchers={HS: ["mppt_multimodal_scanning"]},
+        fallbacks={HS: ["inverter_mppt_multimodal_scanning"]},
+    ),
+    HubControlDef(
+        key="battery_working_mode_select", name="Working mode",
+        device=DEVICE_BATTERY, platform="select", icon="mdi:battery-sync",
+        matchers={HS: ["storage_working_mode_settings"]},
+        fallbacks={HS: ["battery_working_mode"]},
+    ),
+    HubControlDef(
+        key="battery_excess_pv_energy_use_in_tou", name="Excess PV energy use in TOU",
+        device=DEVICE_BATTERY, platform="select", icon="mdi:solar-power-variant-outline",
+        matchers={HS: ["storage_excess_pv_energy_use_in_tou"]},
+        fallbacks={HS: ["battery_excess_pv_energy_use_in_tou"]},
+    ),
+    HubControlDef(
+        key="battery_capacity_control_mode", name="Capacity control mode",
+        device=DEVICE_BATTERY, platform="select", icon="mdi:battery-sync-outline",
+        matchers={HS: ["storage_capacity_control_mode"]},
+        fallbacks={HS: ["battery_capacity_control_mode"]},
+    ),
+]
+
+CONTROL_DEFS_BY_KEY = {d.key: d for d in CONTROL_DEFS}

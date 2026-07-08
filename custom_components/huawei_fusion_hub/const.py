@@ -24,10 +24,12 @@ SOURCE_NAMES = {
 CONF_SOURCES = "sources"
 CONF_PRIORITY = "priority"
 CONF_NOTIFY_ON_DISCONNECT = "notify_on_disconnect"
+CONF_AGGREGATE_CONTROLS = "aggregate_controls"
 CONF_STALE_TIMEOUT = "stale_timeout"
 CONF_OVERRIDES = "overrides"
 
 DEFAULT_NOTIFY_ON_DISCONNECT = True
+DEFAULT_AGGREGATE_CONTROLS = False
 DEFAULT_STALE_TIMEOUT = 0  # 0 = disabled
 
 # A source is considered offline when the fraction of its mapped

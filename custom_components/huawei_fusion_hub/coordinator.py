@@ -21,6 +21,7 @@ from homeassistant.util.unit_conversion import (
 )
 
 from .const import (
+    CONF_AGGREGATE_CONTROLS,
     CONF_NOTIFY_ON_DISCONNECT,
     CONF_OVERRIDES,
     CONF_PRIORITY,
@@ -32,7 +33,13 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
-from .mapping import SENSOR_DEFS, SENSOR_DEFS_BY_KEY, HubSensorDef
+from .mapping import (
+    CONTROL_DEFS,
+    SENSOR_DEFS,
+    SENSOR_DEFS_BY_KEY,
+    HubControlDef,
+    HubSensorDef,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +66,12 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
             CONF_NOTIFY_ON_DISCONNECT,
             entry.data.get(CONF_NOTIFY_ON_DISCONNECT, True),
         )
+        self.aggregate_controls: bool = entry.options.get(
+            CONF_AGGREGATE_CONTROLS,
+            entry.data.get(CONF_AGGREGATE_CONTROLS, False),
+        )
+        # control_key -> {source: entity_id} (switch/select proxies)
+        self.control_candidates: dict[str, dict[str, str]] = {}
         # canonical_key -> {source: entity_id}
         self.candidates: dict[str, dict[str, str]] = {}
         # source -> set of its mapped entity_ids
@@ -116,7 +129,38 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
             if per_source:
                 self.candidates[sensor_def.key] = per_source
 
-        _LOGGER.debug("Discovery result: %s", self.candidates)
+        # --- controls (switch/select proxies), opt-in ---
+        self.control_candidates = {}
+        if self.aggregate_controls:
+            by_source_ctl: dict[str, list[tuple[er.RegistryEntry, str]]] = {
+                s: [] for s in self.priority
+            }
+            for entity in registry.entities.values():
+                if (
+                    entity.platform in by_source_ctl
+                    and entity.domain in ("switch", "select")
+                ):
+                    model = ""
+                    if entity.device_id:
+                        device = device_registry.async_get(entity.device_id)
+                        if device and device.model:
+                            model = device.model
+                    by_source_ctl[entity.platform].append((entity, model))
+            for control_def in CONTROL_DEFS:
+                per_source: dict[str, str] = {}
+                for source in self.priority:
+                    entity_id = self._match(
+                        control_def, source, by_source_ctl.get(source, [])
+                    )
+                    if entity_id:
+                        per_source[source] = entity_id
+                if per_source:
+                    self.control_candidates[control_def.key] = per_source
+
+        _LOGGER.debug(
+            "Discovery result: %d sensors, %d controls",
+            len(self.candidates), len(self.control_candidates),
+        )
 
     @staticmethod
     def _match(
@@ -147,7 +191,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                 pattern = pattern.lower()
                 matches: list[tuple[int, str]] = []
                 for entity, model in entities:
-                    if model_req and model.lower() != model_req.lower():
+                    if model_req and not model.lower().startswith(model_req.lower()):
                         continue
                     if attr == "unique_id":
                         haystack = (entity.unique_id or "").lower()
@@ -159,11 +203,12 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                         or haystack.endswith(f"-{pattern}")
                     ):
                         continue
+                    expected_class = getattr(sensor_def, "device_class", None)
                     if (
-                        sensor_def.device_class
+                        expected_class
                         and entity.original_device_class
                         and str(entity.original_device_class)
-                        != str(sensor_def.device_class)
+                        != str(expected_class)
                     ):
                         continue
                     matches.append((len(haystack), entity.entity_id))

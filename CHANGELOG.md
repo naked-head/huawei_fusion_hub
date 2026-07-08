@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-08
+
+### Added
+
+- Optional aggregation of switch and select control entities (inverter on/off, battery working mode, charge from grid, excess PV use in TOU, capacity control mode, MPPT multimodal scanning) as write-through proxies. Off by default; a dedicated config-flow step explains why duplication is discouraged before letting the user opt in. Available in both initial setup and options.
+- Entity categories: statuses, identifiers and configuration mirrors are now Diagnostic; control proxies are Configuration — matching the source integrations' device page layout.
+- Complete FusionSolar coverage in the mapping: 58 sensors now match FusionSolar Northbound/OpenAPI realtime device data (Residential/String inverter, Battery, Power Sensor, Grid meter) in addition to the Kiosk plant sensors.
+- Full localized names for all 221 sensors including the 90 battery pack entities (EN + IT), fixing duplicate labels in Battery Unit device pages.
+
+### Changed
+
+- Device model matching now uses prefix comparison, required for FusionSolar residential inverters whose model string includes the inverter type.
+- ENTITY_MAP.md regenerated: complete FusionSolar column (Kiosk + OpenAPI) and new Controls section.
+
 ## [0.4.0] - 2026-07-07
 
 ### Added
@@ -61,7 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Options flow to change priority and alert behavior without restart.
 - English and Italian translations.
 
-[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.1.0...v0.2.0

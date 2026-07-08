@@ -4,12 +4,17 @@ Full mapping between Huawei Fusion Hub entities and their sources.
 
 Legend: `—` = not provided by that integration. Source columns show the
 pattern used for matching: **register name** (unique_id `{serial}_{register}`)
-for Huawei Solar, **device model / signal id** (unique_id `{device_id}_{signal_id}`)
-for FusionSolarPlus, **sensor id** (unique_id `fusion_solar-{id}-{sensor_id}`)
-for FusionSolar.
+for Huawei Solar; **device model : signal id** (unique_id `{device_id}_{signal_id}`)
+for FusionSolarPlus; **device model : attribute** (unique_id
+`fusion_solar-{id}-{attribute}`) for FusionSolar — plant rows use the Kiosk
+sensor ids, device rows use the Northbound/OpenAPI realtime device attributes
+(model prefixes: `Residential inverter`, `String inverter`, `Battery`,
+`Power Sensor`, `Grid meter`).
 
-A hub sensor is created when **at least one** configured source provides the
+A hub entity is created when **at least one** configured source provides the
 quantity; single-source entities have no failover but keep a stable name.
+Entity categories follow the source layout: measurements are regular sensors,
+statuses and identifiers are **Diagnostic**, writable proxies are **Configuration**.
 
 ## Inverter (38 entities)
 
@@ -17,67 +22,67 @@ quantity; single-source entities have no failover but keep a stable name.
 |---|---|---|---|
 | `inverter_rated_power` | `rated_power` | `Inverter:10006` | — |
 | `inverter_p_max` | `p_max` | — | — |
-| `pv_input_power` | `input_power` | `Plant:flow_solar_power` | — |
-| `inverter_line_voltage_a_b` | `line_voltage_a_b` | — | — |
-| `inverter_line_voltage_b_c` | `line_voltage_b_c` | — | — |
-| `inverter_line_voltage_c_a` | `line_voltage_c_a` | — | — |
-| `inverter_phase_a_voltage` | `phase_a_voltage` | `Inverter:10011`, `Inverter:10008` | — |
-| `inverter_phase_b_voltage` | `phase_b_voltage` | `Inverter:10012` | — |
-| `inverter_phase_c_voltage` | `phase_c_voltage` | `Inverter:10013` | — |
-| `inverter_phase_a_current` | `phase_a_current` | `Inverter:10014` | — |
-| `inverter_phase_b_current` | `phase_b_current` | `Inverter:10015` | — |
-| `inverter_phase_c_current` | `phase_c_current` | `Inverter:10016` | — |
+| `pv_input_power` | `input_power` | `Plant:flow_solar_power` | `Residential inverter:mppt_power`, `String inverter:mppt_power` |
+| `inverter_line_voltage_a_b` | `line_voltage_a_b` | — | `Residential inverter:ab_u`, `String inverter:ab_u` |
+| `inverter_line_voltage_b_c` | `line_voltage_b_c` | — | `Residential inverter:bc_u`, `String inverter:bc_u` |
+| `inverter_line_voltage_c_a` | `line_voltage_c_a` | — | `Residential inverter:ca_u`, `String inverter:ca_u` |
+| `inverter_phase_a_voltage` | `phase_a_voltage` | `Inverter:10011`, `Inverter:10008` | `Residential inverter:a_u`, `String inverter:a_u` |
+| `inverter_phase_b_voltage` | `phase_b_voltage` | `Inverter:10012` | `Residential inverter:b_u`, `String inverter:b_u` |
+| `inverter_phase_c_voltage` | `phase_c_voltage` | `Inverter:10013` | `Residential inverter:c_u`, `String inverter:c_u` |
+| `inverter_phase_a_current` | `phase_a_current` | `Inverter:10014` | `Residential inverter:a_i`, `String inverter:a_i` |
+| `inverter_phase_b_current` | `phase_b_current` | `Inverter:10015` | `Residential inverter:b_i`, `String inverter:b_i` |
+| `inverter_phase_c_current` | `phase_c_current` | `Inverter:10016` | `Residential inverter:c_i`, `String inverter:c_i` |
 | `inverter_day_active_power_peak` | `day_active_power_peak` | — | — |
-| `pv_active_power` | `active_power` | `Inverter:10018` | — |
-| `inverter_reactive_power` | `reactive_power` | `Inverter:10019` | — |
-| `inverter_power_factor` | `power_factor` | `Inverter:10020` | — |
-| `inverter_grid_frequency` | `grid_frequency` | `Inverter:10021` | — |
-| `inverter_efficiency` | `efficiency` | — | — |
-| `inverter_temperature` | `internal_temperature` | `Inverter:10023` | — |
+| `pv_active_power` | `active_power` | `Inverter:10018` | `Residential inverter:active_power`, `String inverter:active_power` |
+| `inverter_reactive_power` | `reactive_power` | `Inverter:10019` | `Residential inverter:reactive_power`, `String inverter:reactive_power` |
+| `inverter_power_factor` | `power_factor` | `Inverter:10020` | `Residential inverter:power_factor`, `String inverter:power_factor` |
+| `inverter_grid_frequency` | `grid_frequency` | `Inverter:10021` | `Residential inverter:elec_freq`, `String inverter:elec_freq` |
+| `inverter_efficiency` | `efficiency` | — | `Residential inverter:efficiency`, `String inverter:efficiency` |
+| `inverter_temperature` | `internal_temperature` | `Inverter:10023` | `Residential inverter:temperature`, `String inverter:temperature` |
 | `inverter_insulation_resistance` | `insulation_resistance` | `Inverter:10024` | — |
-| `inverter_status` | `device_status` | `Inverter:10025` | — |
-| `inverter_startup_time` | `startup_time` | `Inverter:10027` | — |
-| `inverter_shutdown_time` | `shutdown_time` | `Inverter:10028` | — |
-| `inverter_yield_total` | `accumulated_yield_energy` | `Inverter:10029` | — |
+| `inverter_status` | `device_status` | `Inverter:10025` | `Residential inverter:inverter_state`, `String inverter:inverter_state` |
+| `inverter_startup_time` | `startup_time` | `Inverter:10027` | `Residential inverter:open_time`, `String inverter:open_time` |
+| `inverter_shutdown_time` | `shutdown_time` | `Inverter:10028` | `Residential inverter:close_time`, `String inverter:close_time` |
+| `inverter_yield_total` | `accumulated_yield_energy` | `Inverter:10029` | `Residential inverter:total_cap`, `String inverter:total_cap` |
 | `inverter_total_dc_input_energy` | `total_dc_input_power` | — | — |
 | `inverter_statistics_time` | `current_electricity_generation_statistics_time` | — | — |
 | `inverter_yield_hour` | `hourly_yield_energy` | — | — |
-| `inverter_yield_today` | `daily_yield_energy` | `Inverter:10032` | — |
+| `inverter_yield_today` | `daily_yield_energy` | `Inverter:10032` | `Residential inverter:day_cap`, `String inverter:day_cap` |
 | `inverter_yield_month` | `monthly_yield_energy` | — | — |
 | `inverter_yield_year` | `yearly_yield_energy` | — | — |
 | `inverter_state_1` | `state_1` | — | — |
 | `inverter_output_mode` | — | `Inverter:21029` | — |
-| `pv_1_voltage` | `pv_01_voltage` | `Inverter:11001` | — |
-| `pv_1_current` | `pv_01_current` | `Inverter:11002` | — |
+| `pv_1_voltage` | `pv_01_voltage` | `Inverter:11001` | `Residential inverter:pv1_u`, `String inverter:pv1_u` |
+| `pv_1_current` | `pv_01_current` | `Inverter:11002` | `Residential inverter:pv1_i`, `String inverter:pv1_i` |
 | `pv_1_power` | — | `Inverter:11003` | — |
-| `pv_2_voltage` | `pv_02_voltage` | `Inverter:11004` | — |
-| `pv_2_current` | `pv_02_current` | `Inverter:11005` | — |
+| `pv_2_voltage` | `pv_02_voltage` | `Inverter:11004` | `Residential inverter:pv2_u`, `String inverter:pv2_u` |
+| `pv_2_current` | `pv_02_current` | `Inverter:11005` | `Residential inverter:pv2_i`, `String inverter:pv2_i` |
 | `pv_2_power` | — | `Inverter:11006` | — |
 
 ## Power Meter (28 entities)
 
 | Hub entity (`sensor.hf_hub_…`) | Huawei Solar (Modbus) | FusionSolarPlus | FusionSolar |
 |---|---|---|---|
-| `meter_status` | `meter_status` | `Power Sensor:10001` | — |
-| `meter_active_power` | `power_meter_active_power` | `Power Sensor:10004`, `Power Sensor:11207`, `Power Sensor:2101271` | — |
-| `meter_reactive_power` | `power_meter_reactive_power` | `Power Sensor:10005`, `Power Sensor:11208`, `Power Sensor:2101272` | — |
-| `meter_power_factor` | `active_grid_power_factor` | `Power Sensor:10006`, `Power Sensor:10014`, `Power Sensor:2101280` | — |
-| `meter_frequency` | `active_grid_frequency` | `Power Sensor:10007` | — |
-| `grid_exported_energy` | `grid_exported_energy` | `Power Sensor:10008`, `Power Sensor:11116` | — |
-| `grid_imported_energy` | `grid_accumulated_energy` | `Power Sensor:10009`, `Power Sensor:11115` | — |
+| `meter_status` | `meter_status` | `Power Sensor:10001` | `Power Sensor:meter_status` |
+| `meter_active_power` | `power_meter_active_power` | `Power Sensor:10004`, `Power Sensor:11207`, `Power Sensor:2101271` | `Power Sensor:active_power`, `Grid meter:active_power` |
+| `meter_reactive_power` | `power_meter_reactive_power` | `Power Sensor:10005`, `Power Sensor:11208`, `Power Sensor:2101272` | `Power Sensor:reactive_power`, `Grid meter:reactive_power` |
+| `meter_power_factor` | `active_grid_power_factor` | `Power Sensor:10006`, `Power Sensor:10014`, `Power Sensor:2101280` | `Power Sensor:power_factor`, `Grid meter:power_factor` |
+| `meter_frequency` | `active_grid_frequency` | `Power Sensor:10007` | `Power Sensor:grid_frequency`, `Grid meter:grid_frequency`, `Residential inverter:elec_freq` |
+| `grid_exported_energy` | `grid_exported_energy` | `Power Sensor:10008`, `Power Sensor:11116` | `Power Sensor:reverse_active_cap`, `Grid meter:reverse_active_cap` |
+| `grid_imported_energy` | `grid_accumulated_energy` | `Power Sensor:10009`, `Power Sensor:11115` | `Power Sensor:active_cap`, `Grid meter:active_cap` |
 | `meter_reactive_energy` | `grid_accumulated_reactive_power` | — | — |
-| `meter_phase_a_voltage` | `grid_a_voltage` | `Power Sensor:10002`, `Power Sensor:11204`, `Power Sensor:2101256` | — |
-| `meter_phase_a_current` | `active_grid_a_current` | `Power Sensor:10003`, `Power Sensor:2101268` | — |
-| `meter_phase_a_active_power` | `active_grid_a_power` | `Power Sensor:10019`, `Power Sensor:2101281` | — |
-| `meter_phase_b_voltage` | `grid_b_voltage` | `Power Sensor:10010`, `Power Sensor:11205`, `Power Sensor:2101257` | — |
-| `meter_phase_b_current` | `active_grid_b_current` | `Power Sensor:10012`, `Power Sensor:2101269` | — |
-| `meter_phase_b_active_power` | `active_grid_b_power` | `Power Sensor:10020`, `Power Sensor:2101282` | — |
-| `meter_phase_c_voltage` | `grid_c_voltage` | `Power Sensor:10011`, `Power Sensor:11206`, `Power Sensor:2101264` | — |
-| `meter_phase_c_current` | `active_grid_c_current` | `Power Sensor:10013`, `Power Sensor:2101270` | — |
-| `meter_phase_c_active_power` | `active_grid_c_power` | `Power Sensor:10021`, `Power Sensor:2101283` | — |
-| `meter_line_voltage_a_b` | `active_grid_a_b_voltage` | `Power Sensor:2101252` | — |
-| `meter_line_voltage_b_c` | `active_grid_b_c_voltage` | `Power Sensor:2101253` | — |
-| `meter_line_voltage_c_a` | `active_grid_c_a_voltage` | `Power Sensor:2101254` | — |
+| `meter_phase_a_voltage` | `grid_a_voltage` | `Power Sensor:10002`, `Power Sensor:11204`, `Power Sensor:2101256` | `Power Sensor:a_u`, `Grid meter:a_u` |
+| `meter_phase_a_current` | `active_grid_a_current` | `Power Sensor:10003`, `Power Sensor:2101268` | `Power Sensor:a_i`, `Grid meter:a_i` |
+| `meter_phase_a_active_power` | `active_grid_a_power` | `Power Sensor:10019`, `Power Sensor:2101281` | `Power Sensor:active_power_a`, `Grid meter:active_power_a` |
+| `meter_phase_b_voltage` | `grid_b_voltage` | `Power Sensor:10010`, `Power Sensor:11205`, `Power Sensor:2101257` | `Power Sensor:b_u`, `Grid meter:b_u` |
+| `meter_phase_b_current` | `active_grid_b_current` | `Power Sensor:10012`, `Power Sensor:2101269` | `Power Sensor:b_i`, `Grid meter:b_i` |
+| `meter_phase_b_active_power` | `active_grid_b_power` | `Power Sensor:10020`, `Power Sensor:2101282` | `Power Sensor:active_power_b`, `Grid meter:active_power_b` |
+| `meter_phase_c_voltage` | `grid_c_voltage` | `Power Sensor:10011`, `Power Sensor:11206`, `Power Sensor:2101264` | `Power Sensor:c_u`, `Grid meter:c_u` |
+| `meter_phase_c_current` | `active_grid_c_current` | `Power Sensor:10013`, `Power Sensor:2101270` | `Power Sensor:c_i`, `Grid meter:c_i` |
+| `meter_phase_c_active_power` | `active_grid_c_power` | `Power Sensor:10021`, `Power Sensor:2101283` | `Power Sensor:active_power_c`, `Grid meter:active_power_c` |
+| `meter_line_voltage_a_b` | `active_grid_a_b_voltage` | `Power Sensor:2101252` | `Power Sensor:ab_u`, `Grid meter:ab_u` |
+| `meter_line_voltage_b_c` | `active_grid_b_c_voltage` | `Power Sensor:2101253` | `Power Sensor:bc_u`, `Grid meter:bc_u` |
+| `meter_line_voltage_c_a` | `active_grid_c_a_voltage` | `Power Sensor:2101254` | `Power Sensor:ca_u`, `Grid meter:ca_u` |
 | `meter_rs485_port_mode` | — | `Power Sensor:230700283` | — |
 | `meter_wifi_signal_strength` | — | `Power Sensor:15101` | — |
 | `meter_signal_strength` | — | `Power Sensor:15102` | — |
@@ -91,19 +96,19 @@ quantity; single-source entities have no failover but keep a stable name.
 
 | Hub entity (`sensor.hf_hub_…`) | Huawei Solar (Modbus) | FusionSolarPlus | FusionSolar |
 |---|---|---|---|
-| `battery_soc` | `storage_state_of_capacity` | `Battery:10006` | — |
-| `battery_power` | `storage_charge_discharge_power` | `Battery:10004` | — |
-| `battery_charged_today` | `storage_current_day_charge_capacity` | `Battery:10001` | — |
-| `battery_discharged_today` | `storage_current_day_discharge_capacity` | `Battery:10002` | — |
+| `battery_soc` | `storage_state_of_capacity` | `Battery:10006` | `Battery:battery_soc` |
+| `battery_power` | `storage_charge_discharge_power` | `Battery:10004` | `Battery:ch_discharge_power` |
+| `battery_charged_today` | `storage_current_day_charge_capacity` | `Battery:10001` | `Battery:charge_cap` |
+| `battery_discharged_today` | `storage_current_day_discharge_capacity` | `Battery:10002` | `Battery:discharge_cap` |
 | `battery_total_charge` | `storage_total_charge` | — | — |
 | `battery_total_discharge` | `storage_total_discharge` | — | — |
-| `battery_status` | `storage_running_status` | `Battery:10003` | — |
-| `battery_bus_voltage` | `storage_bus_voltage` | `Battery:10005` | — |
+| `battery_status` | `storage_running_status` | `Battery:10003` | `Battery:battery_status` |
+| `battery_bus_voltage` | `storage_bus_voltage` | `Battery:10005` | `Battery:busbar_u` |
 | `battery_bus_current` | `storage_bus_current` | — | — |
 | `battery_rated_capacity` | `storage_rated_capacity` | `Battery:10013` | — |
-| `battery_max_charge_power` | `storage_maximum_charge_power` | — | — |
-| `battery_max_discharge_power` | `storage_maximum_discharge_power` | — | — |
-| `battery_working_mode` | — | `Battery:10008` | — |
+| `battery_max_charge_power` | `storage_maximum_charge_power` | — | `Battery:max_charge_power` |
+| `battery_max_discharge_power` | `storage_maximum_discharge_power` | — | `Battery:max_discharge_power` |
+| `battery_working_mode` | — | `Battery:10008` | `Battery:ch_discharge_model` |
 | `battery_backup_time` | — | `Battery:10015` | — |
 
 ## Battery Unit 1 (huawei_solar unit 1 ↔ FSP Module 1) (62 entities)
@@ -262,13 +267,29 @@ quantity; single-source entities have no failover but keep a stable name.
 | `flow_load_power` | — | `Plant:flow_load_power` | — |
 | `flow_grid_power` | — | `Plant:flow_grid_power` | — |
 
+## Controls — switch & select proxies (6 entities, opt-in)
+
+Created only when "Aggregate control entities" is enabled in the config
+flow. These are **write-through proxies**: the hub entity mirrors the source
+state and forwards every command to the source entity. Controls exist only
+on the Modbus connection, so there is no failover — see the configuration
+step for why leaving them disabled is recommended.
+
+| Hub entity | Platform | Huawei Solar (Modbus) | FusionSolarPlus | FusionSolar |
+|---|---|---|---|---|
+| `inverter_power` | `switch` | `startup` | — | — |
+| `battery_charge_from_grid` | `switch` | `storage_charge_from_grid_function` | — | — |
+| `mppt_multimodal_scanning` | `switch` | `mppt_multimodal_scanning` | — | — |
+| `battery_working_mode_select` | `select` | `storage_working_mode_settings` | — | — |
+| `battery_excess_pv_energy_use_in_tou` | `select` | `storage_excess_pv_energy_use_in_tou` | — | — |
+| `battery_capacity_control_mode` | `select` | `storage_capacity_control_mode` | — | — |
+
 ## Entities excluded by design
 
-Huawei Solar **writable control entities** (`number.*`, `select.*`, `switch.*`,
-`button.*`: battery max charge/discharge power, end-of-charge/discharge SOC,
-working mode select, inverter power limits, forcible charge, TOU periods)
-are not aggregated: they only exist on the Modbus connection, have no cloud
-equivalent to fail over to, and mirroring them as read-only sensors would be
-ambiguous. Automations that write keep using the native huawei_solar entities.
+Huawei Solar **`number.*` and `button.*` entities** (battery max charge/discharge
+power setpoints, end-of-charge/discharge SOC, inverter power limits, forcible
+charge) are not aggregated even with controls enabled: they are numeric setpoints
+and momentary actions tightly coupled to the Modbus write path. Automations that
+write them keep using the native huawei_solar entities.
 
-**Total hub entities: 221**
+**Total hub entities: 221 sensors + 6 optional controls**
