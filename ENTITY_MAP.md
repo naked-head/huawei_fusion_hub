@@ -267,13 +267,13 @@ statuses and identifiers are **Diagnostic**, writable proxies are **Configuratio
 | `flow_load_power` | — | `Plant:flow_load_power` | — |
 | `flow_grid_power` | — | `Plant:flow_grid_power` | — |
 
-## Controls — switch & select proxies (6 entities, opt-in)
+## Controls — write-through proxies (18 entities, opt-in)
 
 Created only when "Aggregate control entities" is enabled in the config
-flow. These are **write-through proxies**: the hub entity mirrors the source
-state and forwards every command to the source entity. Controls exist only
-on the Modbus connection, so there is no failover — see the configuration
-step for why leaving them disabled is recommended.
+flow. These proxies mirror the source state and forward every command to
+the source entity (switch, select, number setpoints and buttons). Controls
+exist only on the Modbus connection, so there is no failover — see the
+configuration step for why leaving them disabled is recommended.
 
 | Hub entity | Platform | Huawei Solar (Modbus) | FusionSolarPlus | FusionSolar |
 |---|---|---|---|---|
@@ -283,13 +283,17 @@ step for why leaving them disabled is recommended.
 | `battery_working_mode_select` | `select` | `storage_working_mode_settings` | — | — |
 | `battery_excess_pv_energy_use_in_tou` | `select` | `storage_excess_pv_energy_use_in_tou` | — | — |
 | `battery_capacity_control_mode` | `select` | `storage_capacity_control_mode` | — | — |
+| `inverter_power_derating_percent` | `number` | `active_power_percentage_derating` | — | — |
+| `inverter_power_derating_watt` | `number` | `active_power_fixed_value_derating` | — | — |
+| `mppt_scanning_interval` | `number` | `mppt_scanning_interval` | — | — |
+| `battery_maximum_charging_power` | `number` | `storage_maximum_charging_power` | — | — |
+| `battery_maximum_discharging_power` | `number` | `storage_maximum_discharging_power` | — | — |
+| `battery_end_of_charge_soc` | `number` | `storage_charging_cutoff_capacity` | — | — |
+| `battery_end_of_discharge_soc` | `number` | `storage_discharging_cutoff_capacity` | — | — |
+| `battery_backup_power_soc` | `number` | `storage_backup_power_state_of_charge` | — | — |
+| `battery_grid_charge_cutoff_soc` | `number` | `storage_grid_charge_cutoff_state_of_charge` | — | — |
+| `battery_grid_charge_maximum_power` | `number` | `storage_power_of_charge_from_grid` | — | — |
+| `battery_peak_shaving_soc` | `number` | `storage_capacity_control_soc_peak_shaving` | — | — |
+| `battery_stop_forcible_charge` | `button` | `stop_forcible_charge` | — | — |
 
-## Entities excluded by design
-
-Huawei Solar **`number.*` and `button.*` entities** (battery max charge/discharge
-power setpoints, end-of-charge/discharge SOC, inverter power limits, forcible
-charge) are not aggregated even with controls enabled: they are numeric setpoints
-and momentary actions tightly coupled to the Modbus write path. Automations that
-write them keep using the native huawei_solar entities.
-
-**Total hub entities: 221 sensors + 6 optional controls**
+**Total hub entities: 221 sensors + 18 optional controls**

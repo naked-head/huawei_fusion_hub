@@ -35,7 +35,7 @@ A [Home Assistant](https://www.home-assistant.io/) integration that aggregates d
 - **Dynamic rediscovery**: when a source integration is added or re-enabled, the hub automatically discovers and creates the new hub entities — no restart needed — and notifies you with grouped counts.
 - **Source availability alerts**: a `binary_sensor` per source (connectivity device class), an event on the bus (`huawei_fusion_hub_source_offline` / `_online`), and configurable persistent notifications when a source goes down or recovers.
 - **Initial summary notification**: on first setup, a persistent notification reports how many entities were created, grouped per device and per source.
-- **Optional control aggregation**: switch and select entities (inverter on/off, battery working mode, charge from grid…) can be proxied through the hub — off by default, with the rationale explained in the config flow.
+- **Optional control aggregation**: switch, select, number and button entities (inverter on/off, battery working mode, power setpoints, forcible charge…) can be proxied through the hub — off by default, with the rationale explained in the config flow.
 - **Native entity categories**: measurements, Diagnostic (statuses, identifiers) and Configuration (control proxies) are separated in each device page, mirroring the source integrations' layout.
 - **Multi-language**: UI and entity names in English and Italian.
 
@@ -73,7 +73,7 @@ At least one of the following integrations must be installed and configured befo
 1. **Settings → Devices & Services → Add Integration → Huawei Fusion Hub**
 2. **Select sources**: installed integrations are auto-detected and pre-selected. You can select any combination.
 3. **Set priority** (if more than one source): order the sources — the hub always tries the first available one.
-4. **Aggregate control entities** (optional, off by default): choose whether switch/select controls should also be proxied through the hub. Controls exist only on the Modbus connection, so they gain no failover — the step explains the trade-off before you decide.
+4. **Aggregate control entities** (optional, off by default): choose whether switch, select, number and button controls should also be proxied through the hub. Controls exist only on the Modbus connection, so they gain no failover — the step explains the trade-off before you decide.
 
 ### Changing sources or priority
 
@@ -99,7 +99,7 @@ The hub exposes **221 canonical sensors** grouped into logical devices. The full
 | Battery Unit 1 | 62 — unit-level and per-pack (3 packs): voltage, power, SoC, temperatures, discharge energy… |
 | Battery Unit 2 | 61 — same as Unit 1 |
 | Plant | 18 — realtime power, daily/monthly/yearly/total energy, consumption, self-consumption ratios, flows… |
-| Controls (opt-in) | 6 — switch/select proxies: inverter on/off, charge from grid, MPPT scanning, battery working mode, excess PV use, capacity control |
+| Controls (opt-in) | 18 — switch/select/number/button proxies: inverter on/off, working modes, power setpoints, SOC limits, forcible charge |
 
 A hub sensor is created only when at least one configured source provides that quantity. Sensors only available from a single source have no failover but keep a stable entity name.
 

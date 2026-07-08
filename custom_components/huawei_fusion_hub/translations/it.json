@@ -22,7 +22,7 @@
       },
       "controls": {
         "title": "Aggrega entità di controllo",
-        "description": "Le integrazioni sorgente (Huawei Solar via Modbus) espongono controlli scrivibili: accensione inverter, modalità batteria, carica dalla rete e altri.\n\n**Consigliamo di lasciare questa opzione DISATTIVATA.** I controlli esistono solo sulla connessione Modbus — non c'è un equivalente cloud su cui fare failover, quindi duplicarli non offre alcun vantaggio di resilienza e crea due entità che fanno la stessa cosa, generando confusione in automazioni e dashboard.\n\nAttivala solo se vuoi che dashboard e automazioni facciano riferimento esclusivamente alle entità `hf_hub`, controlli inclusi. Le entità hub rispecchiano lo stato della sorgente e inoltrano ogni comando all'entità originale.",
+        "description": "Le integrazioni sorgente (Huawei Solar via Modbus) espongono controlli scrivibili: accensione inverter, modalità batteria, carica dalla rete, setpoint di potenza, carica forzata e altri.\n\n**Consigliamo di lasciare questa opzione DISATTIVATA.** I controlli esistono solo sulla connessione Modbus — non c'è un equivalente cloud su cui fare failover, quindi duplicarli non offre alcun vantaggio di resilienza e crea due entità che fanno la stessa cosa, generando confusione in automazioni e dashboard.\n\nAttivala solo se vuoi che dashboard e automazioni facciano riferimento esclusivamente alle entità `hf_hub`, controlli inclusi. Le entità hub (switch, select, number, button) rispecchiano lo stato della sorgente e inoltrano ogni comando all'entità originale.",
         "data": {
           "aggregate_controls": "Aggrega entità switch e select"
         }
@@ -61,7 +61,7 @@
       },
       "controls": {
         "title": "Aggrega entità di controllo",
-        "description": "Le integrazioni sorgente (Huawei Solar via Modbus) espongono controlli scrivibili: accensione inverter, modalità batteria, carica dalla rete e altri.\n\n**Consigliamo di lasciare questa opzione DISATTIVATA.** I controlli esistono solo sulla connessione Modbus — non c'è un equivalente cloud su cui fare failover, quindi duplicarli non offre alcun vantaggio di resilienza e crea due entità che fanno la stessa cosa, generando confusione in automazioni e dashboard.\n\nAttivala solo se vuoi che dashboard e automazioni facciano riferimento esclusivamente alle entità `hf_hub`, controlli inclusi. Le entità hub rispecchiano lo stato della sorgente e inoltrano ogni comando all'entità originale.",
+        "description": "Le integrazioni sorgente (Huawei Solar via Modbus) espongono controlli scrivibili: accensione inverter, modalità batteria, carica dalla rete, setpoint di potenza, carica forzata e altri.\n\n**Consigliamo di lasciare questa opzione DISATTIVATA.** I controlli esistono solo sulla connessione Modbus — non c'è un equivalente cloud su cui fare failover, quindi duplicarli non offre alcun vantaggio di resilienza e crea due entità che fanno la stessa cosa, generando confusione in automazioni e dashboard.\n\nAttivala solo se vuoi che dashboard e automazioni facciano riferimento esclusivamente alle entità `hf_hub`, controlli inclusi. Le entità hub (switch, select, number, button) rispecchiano lo stato della sorgente e inoltrano ogni comando all'entità originale.",
         "data": {
           "aggregate_controls": "Aggrega entità switch e select"
         }
@@ -769,6 +769,46 @@
       },
       "battery_capacity_control_mode": {
         "name": "Modalità controllo capacità"
+      }
+    },
+    "number": {
+      "inverter_power_derating_percent": {
+        "name": "Riduzione potenza attiva (%)"
+      },
+      "inverter_power_derating_watt": {
+        "name": "Riduzione potenza attiva (W)"
+      },
+      "mppt_scanning_interval": {
+        "name": "Intervallo scansione MPPT"
+      },
+      "battery_maximum_charging_power": {
+        "name": "Potenza massima di carica"
+      },
+      "battery_maximum_discharging_power": {
+        "name": "Potenza massima di scarica"
+      },
+      "battery_end_of_charge_soc": {
+        "name": "SOC di fine carica"
+      },
+      "battery_end_of_discharge_soc": {
+        "name": "SOC di fine scarica"
+      },
+      "battery_backup_power_soc": {
+        "name": "SOC riserva backup"
+      },
+      "battery_grid_charge_cutoff_soc": {
+        "name": "SOC limite carica da rete"
+      },
+      "battery_grid_charge_maximum_power": {
+        "name": "Potenza massima carica da rete"
+      },
+      "battery_peak_shaving_soc": {
+        "name": "SOC peak shaving"
+      }
+    },
+    "button": {
+      "battery_stop_forcible_charge": {
+        "name": "Ferma carica forzata"
       }
     }
   }

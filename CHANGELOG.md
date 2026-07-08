@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-08
+
+### Added
+
+- Number and button write-through proxies (11 setpoints + stop forcible charge), completing control aggregation across all four platforms with the same opt-in philosophy.
+- Localized backend notifications (discovery summary, rediscovery, source offline/online) in English and Italian, selected via the Home Assistant configured language.
+
+### Fixed
+
+- Spurious "source is back online" notifications after every Home Assistant restart: online alerts now fire only when a genuine offline alert was raised earlier in the same runtime. The startup transition (sources loading slower than the hub) is silent.
+
 ## [0.5.0] - 2026-07-08
 
 ### Added
@@ -75,7 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Options flow to change priority and alert behavior without restart.
 - English and Italian translations.
 
-[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.2.0...v0.3.0

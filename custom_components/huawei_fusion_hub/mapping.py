@@ -625,6 +625,68 @@ CONTROL_DEFS: list[HubControlDef] = [
         matchers={HS: ["storage_capacity_control_mode"]},
         fallbacks={HS: ["battery_capacity_control_mode"]},
     ),
+    # ---- number proxies (huawei_solar setpoints) ----
+    HubControlDef(
+        key="inverter_power_derating_percent", name="Active power derating (%)",
+        device=DEVICE_INVERTER, platform="number", icon="mdi:car-speed-limiter",
+        matchers={HS: ["active_power_percentage_derating"]},
+    ),
+    HubControlDef(
+        key="inverter_power_derating_watt", name="Active power derating (W)",
+        device=DEVICE_INVERTER, platform="number", icon="mdi:car-speed-limiter",
+        matchers={HS: ["active_power_fixed_value_derating"]},
+    ),
+    HubControlDef(
+        key="mppt_scanning_interval", name="MPPT scanning interval",
+        device=DEVICE_INVERTER, platform="number", icon="mdi:timer-cog-outline",
+        matchers={HS: ["mppt_scanning_interval"]},
+    ),
+    HubControlDef(
+        key="battery_maximum_charging_power", name="Maximum charging power",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:battery-arrow-up",
+        matchers={HS: ["storage_maximum_charging_power"]},
+    ),
+    HubControlDef(
+        key="battery_maximum_discharging_power", name="Maximum discharging power",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:battery-arrow-down",
+        matchers={HS: ["storage_maximum_discharging_power"]},
+    ),
+    HubControlDef(
+        key="battery_end_of_charge_soc", name="End of charge SOC",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:battery-charging-high",
+        matchers={HS: ["storage_charging_cutoff_capacity"]},
+    ),
+    HubControlDef(
+        key="battery_end_of_discharge_soc", name="End of discharge SOC",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:battery-off-outline",
+        matchers={HS: ["storage_discharging_cutoff_capacity"]},
+    ),
+    HubControlDef(
+        key="battery_backup_power_soc", name="Backup power SOC",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:battery-lock",
+        matchers={HS: ["storage_backup_power_state_of_charge"]},
+    ),
+    HubControlDef(
+        key="battery_grid_charge_cutoff_soc", name="Grid charge cutoff SOC",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:battery-sync",
+        matchers={HS: ["storage_grid_charge_cutoff_state_of_charge"]},
+    ),
+    HubControlDef(
+        key="battery_grid_charge_maximum_power", name="Grid charge maximum power",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:transmission-tower-import",
+        matchers={HS: ["storage_power_of_charge_from_grid"]},
+    ),
+    HubControlDef(
+        key="battery_peak_shaving_soc", name="Peak shaving SOC",
+        device=DEVICE_BATTERY, platform="number", icon="mdi:chart-sankey",
+        matchers={HS: ["storage_capacity_control_soc_peak_shaving"]},
+    ),
+    # ---- button proxies ----
+    HubControlDef(
+        key="battery_stop_forcible_charge", name="Stop forcible charge",
+        device=DEVICE_BATTERY, platform="button", icon="mdi:stop-circle-outline",
+        matchers={HS: ["stop_forcible_charge"]},
+    ),
 ]
 
 CONTROL_DEFS_BY_KEY = {d.key: d for d in CONTROL_DEFS}

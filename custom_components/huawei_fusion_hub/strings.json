@@ -22,7 +22,7 @@
       },
       "controls": {
         "title": "Aggregate control entities",
-        "description": "The source integrations (Huawei Solar via Modbus) expose writable controls: inverter on/off, battery working mode, charge from grid, and others.\n\n**We recommend leaving this OFF.** Controls exist only on the Modbus connection — there is no cloud equivalent to fail over to, so duplicating them provides no resilience benefit and creates two entities that do the same thing, which can be confusing in automations and dashboards.\n\nEnable this only if you specifically want your dashboards and automations to reference `hf_hub` entities exclusively, including controls. The hub entities mirror the source state and forward every command to the original entity.",
+        "description": "The source integrations (Huawei Solar via Modbus) expose writable controls: inverter on/off, battery working mode, charge from grid, power setpoints, forcible charge, and others.\n\n**We recommend leaving this OFF.** Controls exist only on the Modbus connection — there is no cloud equivalent to fail over to, so duplicating them provides no resilience benefit and creates two entities that do the same thing, which can be confusing in automations and dashboards.\n\nEnable this only if you specifically want your dashboards and automations to reference `hf_hub` entities exclusively, including controls. The hub entities (switch, select, number, button) mirror the source state and forward every command to the original entity.",
         "data": {
           "aggregate_controls": "Aggregate switch and select entities"
         }
@@ -61,7 +61,7 @@
       },
       "controls": {
         "title": "Aggregate control entities",
-        "description": "The source integrations (Huawei Solar via Modbus) expose writable controls: inverter on/off, battery working mode, charge from grid, and others.\n\n**We recommend leaving this OFF.** Controls exist only on the Modbus connection — there is no cloud equivalent to fail over to, so duplicating them provides no resilience benefit and creates two entities that do the same thing, which can be confusing in automations and dashboards.\n\nEnable this only if you specifically want your dashboards and automations to reference `hf_hub` entities exclusively, including controls. The hub entities mirror the source state and forward every command to the original entity.",
+        "description": "The source integrations (Huawei Solar via Modbus) expose writable controls: inverter on/off, battery working mode, charge from grid, power setpoints, forcible charge, and others.\n\n**We recommend leaving this OFF.** Controls exist only on the Modbus connection — there is no cloud equivalent to fail over to, so duplicating them provides no resilience benefit and creates two entities that do the same thing, which can be confusing in automations and dashboards.\n\nEnable this only if you specifically want your dashboards and automations to reference `hf_hub` entities exclusively, including controls. The hub entities (switch, select, number, button) mirror the source state and forward every command to the original entity.",
         "data": {
           "aggregate_controls": "Aggregate switch and select entities"
         }
@@ -769,6 +769,46 @@
       },
       "battery_capacity_control_mode": {
         "name": "Capacity control mode"
+      }
+    },
+    "number": {
+      "inverter_power_derating_percent": {
+        "name": "Active power derating (%)"
+      },
+      "inverter_power_derating_watt": {
+        "name": "Active power derating (W)"
+      },
+      "mppt_scanning_interval": {
+        "name": "MPPT scanning interval"
+      },
+      "battery_maximum_charging_power": {
+        "name": "Maximum charging power"
+      },
+      "battery_maximum_discharging_power": {
+        "name": "Maximum discharging power"
+      },
+      "battery_end_of_charge_soc": {
+        "name": "End of charge SOC"
+      },
+      "battery_end_of_discharge_soc": {
+        "name": "End of discharge SOC"
+      },
+      "battery_backup_power_soc": {
+        "name": "Backup power SOC"
+      },
+      "battery_grid_charge_cutoff_soc": {
+        "name": "Grid charge cutoff SOC"
+      },
+      "battery_grid_charge_maximum_power": {
+        "name": "Grid charge maximum power"
+      },
+      "battery_peak_shaving_soc": {
+        "name": "Peak shaving SOC"
+      }
+    },
+    "button": {
+      "battery_stop_forcible_charge": {
+        "name": "Stop forcible charge"
       }
     }
   }

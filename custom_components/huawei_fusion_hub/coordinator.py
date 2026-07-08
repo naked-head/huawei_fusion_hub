@@ -33,6 +33,7 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
+from .notifications import get_texts
 from .mapping import (
     CONTROL_DEFS,
     SENSOR_DEFS,
@@ -78,6 +79,10 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
         self.source_entities: dict[str, set[str]] = {}
         # source -> bool (last known availability)
         self.source_available: dict[str, bool] = {}
+        # sources for which an offline alert was actually fired this runtime;
+        # online alerts fire only for these, so HA restarts (where sources
+        # start unavailable and come up later) stay silent
+        self._alerted_offline: set[str] = set()
         self._unsub = None
         self._unsub_registry = None
         self._rediscover_cancel = None
@@ -138,7 +143,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
             for entity in registry.entities.values():
                 if (
                     entity.platform in by_source_ctl
-                    and entity.domain in ("switch", "select")
+                    and entity.domain in ("switch", "select", "number", "button")
                 ):
                     model = ""
                     if entity.device_id:
@@ -290,11 +295,14 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
         source_lines = ", ".join(
             f"{SOURCE_NAMES.get(s, s)}: {n}" for s, n in per_source.items()
         )
+        texts = get_texts(self.hass)
         self._notify(
             f"{DOMAIN}_summary",
-            f"Discovery completed: **{len(self.candidates)} entities** created "
-            f"({self._format_counts(self._summary_counts())}).\n\n"
-            f"Entities matched per source: {source_lines}.",
+            texts["summary"].format(
+                total=len(self.candidates),
+                counts=self._format_counts(self._summary_counts()),
+                per_source=source_lines,
+            ),
         )
         data["summary_shown"] = True
         await self._store.async_save(data)
@@ -353,6 +361,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
             SOURCE_NAMES.get(s, s) for s in sorted(changed_sources)
         )
 
+        texts = get_texts(self.hass)
         parts = []
         if new_keys:
             counts: dict[str, int] = {}
@@ -360,17 +369,17 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                 device = SENSOR_DEFS_BY_KEY[k].device
                 counts[device] = counts.get(device, 0) + 1
             parts.append(
-                f"**{len(new_keys)} new entities** created "
-                f"({self._format_counts(counts)})"
+                texts["rediscovery_new"].format(
+                    n=len(new_keys), counts=self._format_counts(counts)
+                )
             )
         if gained:
-            parts.append(
-                f"**{len(gained)} existing entities** gained an additional "
-                "fallback source"
-            )
+            parts.append(texts["rediscovery_gained"].format(n=len(gained)))
         self._notify(
             f"{DOMAIN}_rediscovery",
-            f"New data detected from {source_names}: " + "; ".join(parts) + ".",
+            texts["rediscovery"].format(
+                sources=source_names, parts="; ".join(parts)
+            ),
         )
         _LOGGER.info(
             "Rediscovery: %d new keys, %d gained fallback (%s)",
@@ -384,7 +393,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                 "create",
                 {
                     "notification_id": notification_id,
-                    "title": "Huawei Fusion Hub",
+                    "title": get_texts(self.hass)["title"],
                     "message": message,
                 },
             )
@@ -465,12 +474,19 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
             self.source_available[source] = available
 
             if previous is True and not available:
+                self._alerted_offline.add(source)
                 self._fire_alert(source, offline=True)
             elif previous is False and available:
-                self._fire_alert(source, offline=False)
+                # only a real recovery: an offline alert was fired earlier in
+                # this runtime. The startup False->True transition (sources
+                # loading slower than the hub after a HA restart) is silent.
+                if source in self._alerted_offline:
+                    self._alerted_offline.discard(source)
+                    self._fire_alert(source, offline=False)
 
     def _fire_alert(self, source: str, offline: bool) -> None:
         name = SOURCE_NAMES.get(source, source)
+        texts = get_texts(self.hass)
         self.hass.bus.async_fire(
             f"{DOMAIN}_source_{'offline' if offline else 'online'}",
             {"source": source, "name": name},
@@ -480,8 +496,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
         if offline:
             self._notify(
                 f"{DOMAIN}_{source}_offline",
-                f"Source **{name}** is offline. "
-                "Values are now served by the next available source.",
+                texts["offline"].format(name=name),
             )
         else:
             self.hass.async_create_task(
@@ -493,5 +508,5 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
             )
             self._notify(
                 f"{DOMAIN}_{source}_online",
-                f"Source **{name}** is back online.",
+                texts["online"].format(name=name),
             )
