@@ -208,14 +208,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                         or haystack.endswith(f"-{pattern}")
                     ):
                         continue
-                    expected_class = getattr(sensor_def, "device_class", None)
-                    if (
-                        expected_class
-                        and entity.original_device_class
-                        and str(entity.original_device_class)
-                        != str(expected_class)
-                    ):
-                        continue
+                    # device_class check removed: HA stores class as enum, string comparison unreliable
                     matches.append((len(haystack), entity.entity_id))
                 if matches:
                     # shortest haystack wins: "SER_active_power" beats

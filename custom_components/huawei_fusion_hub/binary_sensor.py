@@ -38,7 +38,7 @@ class SourceAvailabilitySensor(CoordinatorEntity[HubCoordinator], BinarySensorEn
         self._source = source
         uid = f"{ENTITY_PREFIX}_{source}_available"
         self._attr_unique_id = uid
-        self._attr_suggested_object_id = uid
+        self.entity_id = f"binary_sensor.{uid}"
         self._attr_translation_key = uid
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, DEVICE_HUB)},

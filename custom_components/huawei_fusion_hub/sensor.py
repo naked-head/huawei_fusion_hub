@@ -54,7 +54,9 @@ class HubSensor(CoordinatorEntity[HubCoordinator], SensorEntity):
         super().__init__(coordinator)
         self._def = sensor_def
         self._attr_unique_id = f"{ENTITY_PREFIX}_{sensor_def.key}"
-        self._attr_suggested_object_id = f"{ENTITY_PREFIX}_{sensor_def.key}"
+        # has_entity_name makes HA ignore suggested_object_id and build the
+        # entity_id from the device name; preset it to keep stable hf_hub_* ids
+        self.entity_id = f"sensor.{ENTITY_PREFIX}_{sensor_def.key}"
         self._attr_translation_key = sensor_def.key
         self._attr_device_class = sensor_def.device_class
         self._attr_state_class = sensor_def.state_class

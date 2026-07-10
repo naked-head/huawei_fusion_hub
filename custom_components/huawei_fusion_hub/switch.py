@@ -45,7 +45,7 @@ class HubControlProxyBase:
         self._def = control_def
         self._sources = sources
         self._attr_unique_id = f"{ENTITY_PREFIX}_{control_def.key}"
-        self._attr_suggested_object_id = f"{ENTITY_PREFIX}_{control_def.key}"
+        self.entity_id = f"{control_def.platform}.{ENTITY_PREFIX}_{control_def.key}"
         self._attr_translation_key = control_def.key
         self._attr_icon = control_def.icon
         device = control_def.device

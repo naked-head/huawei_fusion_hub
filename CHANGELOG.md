@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-07-09
+
+### Fixed
+
+- Entity IDs are now stable `sensor.hf_hub_<key>`: Home Assistant ignores `suggested_object_id` when `has_entity_name` is set and generated ids from device names (mixed `huawei_fusion_hub_*` / `inverter_hf_hub_*` schemes across versions). Entities now preset `self.entity_id` explicitly. Existing installs: rename registry entries with the provided script or re-add the integration after purging deleted entities.
+- `via_device` warning: the hub device is now registered in `async_setup_entry` before platforms are forwarded.
+- Recorder warnings for FusionSolarPlus daily statistics (consumption, self-consumption, feed-in) that can decrease slightly: state class changed from `total_increasing` to `total`.
+
 ## [0.6.0] - 2026-07-08
 
 ### Added
@@ -86,7 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Options flow to change priority and alert behavior without restart.
 - English and Italian translations.
 
-[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/naked-head/huawei-fusion-hub/compare/v0.3.0...v0.4.0

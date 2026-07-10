@@ -70,6 +70,7 @@ class HubSensorDef:
 _KINDS = {
     "power": (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT),
     "energy": (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.KILO_WATT_HOUR),
+    "energy_total": (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL, UnitOfEnergy.KILO_WATT_HOUR),
     "energy_storage": (SensorDeviceClass.ENERGY_STORAGE, None, UnitOfEnergy.KILO_WATT_HOUR),
     "voltage": (SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.VOLT),
     "current": (SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.AMPERE),
@@ -538,18 +539,18 @@ def _build() -> list[HubSensorDef]:
            fs="total_lifetime_energy", fsp=f"{PLT}:cumulativeEnergy"))
     d(_def("plant_income_today", "Income today", DP, "text",
            fsp=f"{PLT}:dailyIncome", icon="mdi:cash"))
-    d(_def("self_used_energy_today", "Self-used energy today", DP, "energy",
+    d(_def("self_used_energy_today", "Self-used energy today", DP, "energy_total",
            fsp=f"{PLT}:totalSelfUseEnergy", icon="mdi:home-battery"))
-    d(_def("consumption_today", "Consumption today", DP, "energy",
+    d(_def("consumption_today", "Consumption today", DP, "energy_total",
            fsp=f"{PLT}:dailyUseEnergy", icon="mdi:home-lightning-bolt"))
-    d(_def("pv_self_consumption_energy", "PV self-consumption", DP, "energy",
+    d(_def("pv_self_consumption_energy", "PV self-consumption", DP, "energy_total",
            fsp=f"{PLT}:pvSelfConsumptionEnergy"))
     d(_def("pv_feed_in_energy_today", "PV feed-in energy today", DP, "energy",
            fsp=f"{PLT}:totalFeedInEnergy", icon="mdi:transmission-tower-import"))
     d(_def("imported_grid_energy_today", "Imported grid energy today", DP,
            "energy", fsp=f"{PLT}:totalGridImportEnergy",
            icon="mdi:transmission-tower-export"))
-    d(_def("total_consumption", "Total consumption", DP, "energy",
+    d(_def("total_consumption", "Total consumption", DP, "energy_total",
            fsp=f"{PLT}:totalConsumptionEnergy"))
     d(_def("grid_import_ratio", "Grid import ratio", DP, "percent",
            fsp=f"{PLT}:gridImportRatio", icon="mdi:percent"))
