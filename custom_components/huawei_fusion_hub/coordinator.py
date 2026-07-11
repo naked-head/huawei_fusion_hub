@@ -89,6 +89,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
         self._store = Store(
             hass, STORAGE_VERSION, STORAGE_KEY.format(entry_id=entry.entry_id)
         )
+        self._store_data: dict = {}
 
     # ------------------------------------------------------------
     # Discovery
@@ -225,6 +226,13 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
     # Runtime
     # ------------------------------------------------------------
     async def async_start(self) -> None:
+        # Load persisted state before the first discovery/refresh, so a
+        # source that was offline before a Home Assistant restart is still
+        # recognized as such: the recovery notification fires when it comes
+        # back, instead of being mistaken for the silent startup transition.
+        self._store_data = await self._store.async_load() or {}
+        self._alerted_offline = set(self._store_data.get("alerted_offline", []))
+
         self.discover()
         self._subscribe_states()
         self._refresh_data()
@@ -276,8 +284,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
         )
 
     async def _maybe_notify_initial_summary(self) -> None:
-        data = await self._store.async_load() or {}
-        if data.get("summary_shown"):
+        if self._store_data.get("summary_shown"):
             return
         per_source = {
             source: sum(
@@ -297,8 +304,8 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                 per_source=source_lines,
             ),
         )
-        data["summary_shown"] = True
-        await self._store.async_save(data)
+        self._store_data["summary_shown"] = True
+        await self._store.async_save(self._store_data)
 
     @callback
     def _handle_registry_event(self, event: Event) -> None:
@@ -468,14 +475,22 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
 
             if previous is True and not available:
                 self._alerted_offline.add(source)
+                self._persist_alerted_offline()
                 self._fire_alert(source, offline=True)
-            elif previous is False and available:
-                # only a real recovery: an offline alert was fired earlier in
-                # this runtime. The startup False->True transition (sources
-                # loading slower than the hub after a HA restart) is silent.
-                if source in self._alerted_offline:
-                    self._alerted_offline.discard(source)
-                    self._fire_alert(source, offline=False)
+            elif available and source in self._alerted_offline:
+                # Recovery. previous is usually False (offline seen earlier
+                # this runtime), but after a Home Assistant restart the
+                # in-memory `previous` is None even though the source was
+                # genuinely offline before the restart — the persisted
+                # `alerted_offline` flag is what lets us recognize this as
+                # a real recovery instead of the silent startup transition.
+                self._alerted_offline.discard(source)
+                self._persist_alerted_offline()
+                self._fire_alert(source, offline=False)
+
+    def _persist_alerted_offline(self) -> None:
+        self._store_data["alerted_offline"] = sorted(self._alerted_offline)
+        self.hass.async_create_task(self._store.async_save(self._store_data))
 
     def _fire_alert(self, source: str, offline: bool) -> None:
         name = SOURCE_NAMES.get(source, source)
