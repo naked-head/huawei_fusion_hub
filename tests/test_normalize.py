@@ -1,7 +1,6 @@
 """Unit tests for HubCoordinator._normalize (unit conversion)."""
-import sys
 import os
-
+import sys
 from types import SimpleNamespace
 
 sys.path.insert(
