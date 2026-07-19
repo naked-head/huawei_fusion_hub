@@ -1,0 +1,103 @@
+name: Bug Report
+description: Report a problem with the Huawei Fusion Hub integration
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening an issue, please check if a similar one already exists.
+        Logs are essential — without them it is very hard to diagnose the problem.
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version
+      description: Found in Settings → Devices & Services → Huawei Fusion Hub → three-dot menu → Integration information, or in CHANGELOG.md.
+      placeholder: "e.g. 0.6.2"
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      description: Found in Settings → About.
+      placeholder: "e.g. 2026.7.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ha_installation
+    attributes:
+      label: Home Assistant installation type
+      options:
+        - Home Assistant OS
+        - Home Assistant Supervised
+        - Home Assistant Container
+        - Home Assistant Core
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem clearly. What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click on ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        Enable debug logging first — add this to `configuration.yaml`, restart HA, reproduce the issue, then paste the relevant lines here.
+```yaml
+        logger:
+          default: warning
+          logs:
+            custom_components.huawei_fusion_hub: debug
+```
+      render: text
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: sources
+    attributes:
+      label: Configured sources
+      description: Which source integrations are enabled, and in what priority order?
+      options:
+        - label: Huawei Solar (Modbus)
+        - label: FusionSolar
+        - label: FusionSolarPlus
+        - label: Aggregate controls enabled
+        - label: Disconnect notifications enabled
+
+  - type: input
+    id: priority_order
+    attributes:
+      label: Priority order
+      description: The order in which sources are prioritized, highest first.
+      placeholder: "e.g. Huawei Solar → FusionSolar → FusionSolarPlus"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might be relevant — automations, Lovelace cards, other integrations, etc.
+    validations:
+      required: false
