@@ -1,28 +1,25 @@
-# Python
+
+build/
+dist/
+.DS_Store
+*.egg-info/
+.eggs/
+# Home Assistant
+home-assistant.log
+home-assistant_v2.db
+# IDE
+.idea/
+*.log
+# OS
 __pycache__/
 *.py[cod]
 *.pyo
-.eggs/
-*.egg-info/
-dist/
-build/
-
-# Home Assistant
-*.log
-home-assistant_v2.db
-home-assistant.log
+# Python
 .storage/
-
-# IDE
-.vscode/
-.idea/
-*.swp
 *.swo
-
-# OS
-.DS_Store
+*.swp
 Thumbs.db
-
-# Zip artifacts
-*.zip
 .venv/
+.vscode/
+*.zip
+# Zip artifacts
