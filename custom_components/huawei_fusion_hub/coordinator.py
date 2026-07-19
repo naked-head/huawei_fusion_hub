@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_call_later,
@@ -33,14 +34,13 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
-from .notifications import get_texts
 from .mapping import (
     CONTROL_DEFS,
     SENSOR_DEFS,
     SENSOR_DEFS_BY_KEY,
-    HubControlDef,
     HubSensorDef,
 )
+from .notifications import get_texts
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -448,7 +448,7 @@ class HubCoordinator(DataUpdateCoordinator[dict[str, ResolvedValue]]):
                     and dst_unit in converter.VALID_UNITS
                 ):
                     return round(converter.convert(value, src_unit, dst_unit), 3)
-        except Exception:  # noqa: BLE001
+        except Exception:  # unit conversion is best-effort, never fatal
             _LOGGER.debug(
                 "Unit conversion failed for %s: %s -> %s",
                 state.entity_id,
