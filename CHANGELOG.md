@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Energy Dashboard migration guide ([ENERGY_MIGRATION.md](ENERGY_MIGRATION.md)) with step-by-step instructions for transferring long-term statistics from source integration entities to hub entities
+- README section linking to the migration guide with disclaimer
+
 ## [0.6.2] - 2026-07-11
 
 ### Fixed

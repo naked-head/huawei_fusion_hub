@@ -87,6 +87,14 @@ No restart is needed when changing options.
 
 ---
 
+## Migrating the Energy Dashboard
+
+If you are switching from the source integrations to Huawei Fusion Hub in the Energy Dashboard and want to preserve your historical statistics, see **[ENERGY_MIGRATION.md](ENERGY_MIGRATION.md)** for a step-by-step guide.
+
+This procedure renames the existing `statistic_id` entries in the Home Assistant database so the Energy Dashboard sees the hub entities as having the full history from the original source entities. It requires direct SQLite access and is intended for advanced users. If you are not comfortable working with databases from the command line, do not attempt this procedure — start fresh with the hub entities and let the Energy Dashboard build new statistics over time. In any case, the author assumes no responsibility for data loss or any other damage.
+
+---
+
 ## Exposed entities
 
 The hub exposes **221 canonical sensors** grouped into logical devices. The full correspondence table between hub entities and source entities is in **[ENTITY_MAP.md](ENTITY_MAP.md)**.
